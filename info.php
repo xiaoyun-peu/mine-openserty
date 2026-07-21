@@ -32,7 +32,7 @@ require __DIR__ . '/includes/header.php';
       <p class="section-desc">服务器的核心配置和连接方式</p>
 
       <div class="server-ip-box" style="margin-bottom:24px">
-        <span class="server-ip-text" id="serverIp"><?= e(SERVER_IP) ?></span>
+        <span class="server-ip-text" id="serverIp"><?= e(setting('server_domain', SERVER_IP)) ?></span>
         <button class="btn-copy" onclick="copyIp()">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="9" height="9"/><path d="M11 5V2H2v9h3"/></svg>
           复制

@@ -3,12 +3,11 @@
  * 实用功能，无花哨特效
  */
 
-// 服务器配置（与 config.php 保持一致）
-const SERVER_CONFIG = {
-  ip: 'play.xyserver.cn',
-  port: 25565,
-  apiUrl: 'https://api.mcsrvstat.us/3/play.xyserver.cn'
-};
+// 服务器配置：优先从页面 #serverIp 读取，避免硬编码旧域名
+function getServerApiUrl() {
+  const ip = document.getElementById('serverIp')?.textContent.trim() || 'play.mineopenserty.cn';
+  return 'https://api.mcsrvstat.us/3/' + encodeURIComponent(ip);
+}
 
 // 移动端导航切换
 function toggleNav() {
@@ -66,7 +65,7 @@ async function fetchServerStatus() {
   if (!dot || !text) return;
 
   try {
-    const response = await fetch(SERVER_CONFIG.apiUrl, {
+    const response = await fetch(getServerApiUrl(), {
       method: 'GET',
       headers: { 'Accept': 'application/json' }
     });

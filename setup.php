@@ -123,10 +123,10 @@ function seed_defaults(PDO $pdo): string {
     // 默认设置
     $defaults = [
         'server_name'     => 'Mineopenserty',
-        'server_domain'   => 'play.xyserver.cn',
+        'server_domain'   => 'play.mineopenserty.cn',
         'site_desc'       => '一个专注于原版生存与社区建设的 Minecraft 服务器。纯净、稳定、长久运行。',
         'footer_text'     => '一个致力于提供优质 Minecraft 多人游戏体验的服务器。纯净生存、社区共建、长久运营。',
-        'contact_email'   => 'admin@xyserver.cn',
+        'contact_email'   => 'admin@mineopenserty.cn',
         'qq_group'        => '123456789',
         'qq_url'          => '#',
         'oopz_url'        => 'https://oopz.cn',
@@ -155,7 +155,7 @@ function seed_defaults(PDO $pdo): string {
 
     // 默认基本信息项
     $infoItems = [
-        ['服务器地址', 'play.xyserver.cn', 1],
+        ['服务器地址', 'play.mineopenserty.cn', 1],
         ['服务器版本', 'Java 1.20.4（支持 1.20.x 客户端接入）', 2],
         ['游戏模式', '原版生存（Survival）+ 领地保护', 3],
         ['在线模式', '正版验证（需拥有正版 Minecraft 账号）', 4],
@@ -240,7 +240,7 @@ function seed_defaults(PDO $pdo): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>站点初始化 - <?= e(SERVER_NAME) ?></title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236abf4b' width='100' height='100'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>XY</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236abf4b' width='100' height='100'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>MO</text></svg>">
 </head>
 <body>
   <div class="setup-wrap">
@@ -285,7 +285,7 @@ function seed_defaults(PDO $pdo): string {
             </div>
             <div class="form-group">
               <label class="form-label">数据库名</label>
-              <input type="text" name="name" class="form-input" value="<?= e($_POST['name'] ?? '') ?>" placeholder="xy_server" required>
+              <input type="text" name="name" class="form-input" value="<?= e($_POST['name'] ?? '') ?>" placeholder="mineopenserty" required>
             </div>
             <div class="form-group">
               <label class="form-label">用户名</label>

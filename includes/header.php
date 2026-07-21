@@ -26,7 +26,7 @@ if (function_exists('current_user')) {
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title><?= e($PAGE_TITLE) ?> - <?= e($_h_serverName) ?></title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236abf4b' width='100' height='100'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>XY</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%236abf4b' width='100' height='100'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>MO</text></svg>">
 </head>
 <body>
 

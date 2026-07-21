@@ -6,16 +6,16 @@
 
 // 服务器信息
 define('SERVER_NAME',    'Mineopenserty');
-define('SERVER_IP',      'play.xyserver.cn');
+define('SERVER_IP',      'play.mineopenserty.cn');
 define('SERVER_PORT',    25565);
 define('SERVER_VERSION', '1.20.4');
-define('STATUS_API',     'https://api.mcsrvstat.us/3/play.xyserver.cn');
+define('STATUS_API',     'https://api.mcsrvstat.us/3/play.mineopenserty.cn');
 
 // 社区 / 联系方式
 define('QQ_GROUP',       '123456789');
 define('QQ_JOIN_URL',    '#');            // QQ 群加群链接（占位）
 define('OOPZ_URL',       'https://oopz.cn'); // Oopz 频道（占位）
-define('CONTACT_EMAIL',  'admin@xyserver.cn');
+define('CONTACT_EMAIL',  'admin@mineopenserty.cn');
 define('BILIBILI_URL',   '#');
 define('MCBBS_URL',      '#');
 

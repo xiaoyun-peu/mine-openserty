@@ -42,7 +42,7 @@ require __DIR__ . '/inc/admin_header.php';
     </div>
     <div class="form-group">
       <label class="form-label">服务器域名 / IP</label>
-      <input type="text" name="server_domain" class="form-input" value="<?= e($cfg['server_domain']) ?>" placeholder="play.xyserver.cn">
+      <input type="text" name="server_domain" class="form-input" value="<?= e($cfg['server_domain']) ?>" placeholder="play.mineopenserty.cn">
     </div>
     <div class="form-group">
       <label class="form-label">网站描述</label>

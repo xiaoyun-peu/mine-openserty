@@ -17,7 +17,7 @@
 1. 把 `dist/` 或从[Releases](https://github.com/xiaoyun-peu/mine-openserty/releases/)下载的压缩包部署到 PHP 7.4+ 环境
 2. 准备 MySQL 5.7+ 数据库
 3. 访问 `setup.php` 填写数据库信息，自动建库建表
-4. 默认管理员：`admin` / `123456`
+4. 初始化完成后页面会显示随机生成的管理员密码（账号 `admin`），请立即登录后台修改密码
 
 ## 配置
 

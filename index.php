@@ -44,7 +44,7 @@ require __DIR__ . '/includes/header.php';
         <span class="status-text" id="statusText">加载中...</span>
       </div>
 
-      <h1 class="hero-title">XY <span>Server</span></h1>
+      <h1 class="hero-title">Mineopen<span>Serty</span></h1>
       <p class="hero-subtitle"><?= e(setting('site_desc', '一个专注于原版生存与社区建设的 Minecraft 服务器。纯净、稳定、长久运行。')) ?></p>
 
       <div class="server-ip-box">
