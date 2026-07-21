@@ -4,6 +4,7 @@
 
 ## 特点
 利用<strong>Mine</strong>craft<strong>Open</strong><strong>Ser</strong>verCommuni<strong>ty</strong>
+可以实现快速搭建服务器官网，完全管理后台，审核入服申请等
 
 ## 功能
 
