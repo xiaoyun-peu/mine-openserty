@@ -161,13 +161,7 @@ require __DIR__ . '/inc/admin_header.php';
 </div>
 <?php endif; ?>
 
-<!-- Tab 切换 -->
 <div class="admin-card" style="margin-bottom:16px">
-  <div style="display:flex;gap:4px;margin-bottom:12px">
-    <a href="?tab=file<?= $folderPath?'&folder='.urlencode($folderPath):'' ?>" class="btn btn-sm <?= $tab==='file'?'btn-primary':'btn-outline' ?>">文件</a>
-    <a href="?tab=image<?= $folderPath?'&folder='.urlencode($folderPath):'' ?>" class="btn btn-sm <?= $tab==='image'?'btn-primary':'btn-outline' ?>">图像</a>
-  </div>
-
   <!-- 上传区 -->
   <form method="post" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
     <?php admin_csrf_input(); ?>
@@ -177,7 +171,8 @@ require __DIR__ . '/inc/admin_header.php';
     <button type="submit" class="btn btn-primary btn-sm">上传</button>
   </form>
 
-  <!-- 面包屑 -->
+  <!-- 面包屑（仅文件模式） -->
+  <?php if ($tab !== 'image'): ?>
   <div style="color:#888;font-size:13px;margin-bottom:8px">
     <a href="?tab=<?= $tab ?>" style="color:#6abf4b">根目录</a>
     <?php if ($folderPath): ?>
@@ -188,10 +183,11 @@ require __DIR__ . '/inc/admin_header.php';
       <?php endforeach; ?>
     <?php endif; ?>
   </div>
+  <?php endif; ?>
 </div>
 
-<!-- 文件夹 -->
-<?php if (!empty($directFolders)): ?>
+<!-- 文件夹（仅文件模式） -->
+<?php if ($tab !== 'image' && !empty($directFolders)): ?>
 <div class="admin-card" style="margin-bottom:16px">
   <h3 style="margin-top:0;margin-bottom:10px">文件夹</h3>
   <div style="display:flex;flex-wrap:wrap;gap:10px">
@@ -211,16 +207,18 @@ require __DIR__ . '/inc/admin_header.php';
 </div>
 <?php endif; ?>
 
-<!-- 新建文件夹 -->
+<!-- 新建文件夹（仅文件模式） -->
+<?php if ($tab !== 'image'): ?>
 <div class="admin-card" style="margin-bottom:16px">
   <form method="post" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
     <?php admin_csrf_input(); ?>
     <input type="hidden" name="action" value="add_folder">
     <input type="hidden" name="parent" value="<?= e($folderPath) ?>">
     <input type="text" name="name" class="form-input" placeholder="新建文件夹名称" style="flex:1;min-width:150px" required>
-    <button type="submit" class="btn btn-outline btn-sm">创建文件夹</button>
-  </form>
+      <button type="submit" class="btn btn-outline btn-sm">创建文件夹</button>
+    </form>
 </div>
+<?php endif; ?>
 
 <!-- 资源列表 -->
 <div class="admin-card">

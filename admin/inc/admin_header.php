@@ -75,7 +75,19 @@ $me = admin_user();
             <li><a href="settings_community.php" class="<?= $ADMIN_PAGE === 'settings_community' ? 'active' : '' ?>">社区设置</a></li>
             <li><a href="settings_resources.php" class="<?= $ADMIN_PAGE === 'settings_resources' ? 'active' : '' ?>">资源下载设置</a></li>
             <li><a href="settings_home.php" class="<?= $ADMIN_PAGE === 'settings_home' ? 'active' : '' ?>">首页设置</a></li>
-            <li><a href="resources_pool.php" class="<?= $ADMIN_PAGE === 'resources_pool' ? 'active' : '' ?>">资源池管理</a></li>
+          </ul>
+        </li>
+
+        <!-- 资源池管理（下拉） -->
+        <li class="<?= in_array($ADMIN_PAGE, ['resources_pool']) ? 'open' : '' ?>">
+          <span class="side-toggle" onclick="this.parentElement.classList.toggle('open')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+            资源池管理
+            <span class="arrow">▶</span>
+          </span>
+          <ul class="side-sub">
+            <li><a href="resources_pool.php?tab=image" class="<?= ($ADMIN_PAGE==='resources_pool' && ($_GET['tab']??'')==='image') ? 'active' : '' ?>">图像</a></li>
+            <li><a href="resources_pool.php?tab=file" class="<?= ($ADMIN_PAGE==='resources_pool' && ($_GET['tab']??'file')==='file') ? 'active' : '' ?>">文件</a></li>
           </ul>
         </li>
       </ul>
