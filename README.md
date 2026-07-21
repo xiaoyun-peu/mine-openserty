@@ -19,30 +19,6 @@
 
 所有网站内容（名称、IP、公告、规则、资源等）均在后台管理面板中修改，无需改代码。
 
-## 许可证
+## 附加署名条款
 
-MIT License
-
-Copyright (c) 2026 Mineopenserty
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-### 附加署名条款
-
-除遵守上述 MIT 许可证外，**任何使用本软件或其衍生作品的行为，均不得以任何形式移除、隐藏或更改软件用户界面（包括但不限于网站页脚）中显示的 "Powered by Mineopenserty" 及其他本项目署名信息**。
+除遵守 MIT 许可证外，**任何使用本软件或其衍生作品的行为，均不得以任何形式移除、隐藏或更改软件用户界面及其他本项目署名信息**。
