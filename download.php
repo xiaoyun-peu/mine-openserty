@@ -30,14 +30,14 @@ function stream_download(string $filePath, string $downloadName): void {
     exit;
 }
 
-// 先查资源池
-$uploadDir = __DIR__ . '/uploads';
+// 先查资源池（存储在 assets/ 下）
+$poolDir = __DIR__ . '/assets';
 try {
     $stmt = db()->prepare('SELECT * FROM `resource_pool` WHERE `id` = ?');
     $stmt->execute([$id]);
     $rp = $stmt->fetch();
     if ($rp) {
-        $filePath = $uploadDir . '/' . $rp['file_path'];
+        $filePath = $poolDir . '/' . $rp['file_path'];
         if (is_file($filePath)) {
             stream_download($filePath, $rp['original_name']);
         }
