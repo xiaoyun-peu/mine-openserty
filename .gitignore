@@ -1,0 +1,26 @@
+# 数据库配置（含密码，不入库）
+includes/db_config.php
+includes/db_config.local.php
+
+# 工作空间配置
+.workbuddy/
+
+# 上传文件（运行时生成）
+uploads/
+
+# 构建产物镜像副本
+dist/
+
+# 临时文件
+*.tmp
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
