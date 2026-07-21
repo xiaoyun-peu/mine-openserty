@@ -15,6 +15,17 @@ $sections = [
     'faqs'       => ['label' => '常见问题',   'fields' => ['question' => '问题', 'answer' => '答案', 'sort' => '排序'], 'text' => ['answer']],
 ];
 
+/** 删除后重新回收/连续编号 ID */
+function reorder_table_ids(string $table): void {
+    $pdo = db();
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+    $pdo->exec('SET @i = 0');
+    $pdo->exec("UPDATE `{$table}` SET `id` = (@i := @i + 1) ORDER BY `sort`, `id`");
+    $max = (int)$pdo->query("SELECT MAX(`id`) FROM `{$table}`")->fetchColumn();
+    $pdo->exec("ALTER TABLE `{$table}` AUTO_INCREMENT = " . ($max + 1));
+    $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+}
+
 // 处理增删改
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action  = $_POST['action'] ?? '';
@@ -28,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'delete') {
             db()->prepare("DELETE FROM `{$section}` WHERE `id` = ?")->execute([$id]);
-            $msg = '已删除';
+            reorder_table_ids($section);
+            $msg = '已删除并重新排序';
         } elseif ($action === 'add' || $action === 'edit') {
             // 收集字段
             $data = [];
