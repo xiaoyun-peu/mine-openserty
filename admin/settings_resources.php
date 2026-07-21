@@ -8,8 +8,9 @@ $ADMIN_TITLE = '资源下载设置';
 $msg = '';
 $msgType = 'ok';
 
-// 上传目录（项目外）
-$uploadDir = 'D:/xyserver_uploads';
+// 上传目录：项目根目录 assets/file（随网站一起部署，Linux 也能找到）
+$baseDir = realpath(__DIR__ . '/../assets') ?: (__DIR__ . '/../assets');
+$uploadDir = $baseDir . '/file';
 if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0755, true); }
 
 function is_blocked_resource_upload(string $filename): bool {
@@ -61,8 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare('SELECT `file_path` FROM `resources` WHERE `id` = ?');
             $stmt->execute([$id]);
             $old = $stmt->fetch();
-            if ($old && $old['file_path'] && strpos($old['file_path'], $uploadDir) === 0 && is_file($old['file_path'])) {
-                @unlink($old['file_path']);
+            if ($old && $old['file_path']) {
+                $oldPath = $old['file_path'];
+                // 兼容旧绝对路径 / 新相对路径
+                $oldAbs = (preg_match('#^[a-zA-Z]:[/\\\\]#', $oldPath) || strpos($oldPath, '/') === 0)
+                    ? $oldPath
+                    : $baseDir . '/' . $oldPath;
+                if (is_file($oldAbs)) @unlink($oldAbs);
             }
             db()->prepare('DELETE FROM `resources` WHERE `id` = ?')->execute([$id]);
             $msg = '资源已删除';
@@ -88,22 +94,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fileSize = null;
                 $oldFileToDelete = null;
 
-                // 分块上传完成后由 JS 回填的文件信息
+                // 分块上传完成后由 JS 回填的文件信息（相对路径，如 file/20260721_220145_xxx.exe）
                 $upPath = trim($_POST['uploaded_file_path'] ?? '');
-                if ($upPath && strpos($upPath, $uploadDir) === 0 && is_file($upPath)) {
+                $upAbs = $upPath ? $baseDir . '/' . $upPath : '';
+                if ($upPath && is_file($upAbs)) {
                     $orig = trim($_POST['uploaded_original_name'] ?? basename($upPath));
-                    $size = (int)($_POST['uploaded_file_size'] ?? filesize($upPath));
+                    $size = (int)($_POST['uploaded_file_size'] ?? filesize($upAbs));
                     if (is_blocked_resource_upload($orig)) {
-                        @unlink($upPath);
+                        @unlink($upAbs);
                         $msg = '禁止上传服务器可执行脚本文件';
                         $msgType = 'err';
                     } elseif ($size > 200 * 1024 * 1024) {
-                        @unlink($upPath);
+                        @unlink($upAbs);
                         $msg = '文件超过 200MB 限制';
                         $msgType = 'err';
                     } else {
-                        $filePath = $upPath;
-                        $md5 = trim($_POST['uploaded_md5'] ?? '') ?: md5_file($upPath);
+                        $filePath = $upPath; // 存相对路径，便于迁移
+                        $md5 = trim($_POST['uploaded_md5'] ?? '') ?: md5_file($upAbs);
                         $fileSize = $size;
                         if ($action === 'edit' && $prevRow && $prevRow['file_path'] && $prevRow['file_path'] !== $upPath) {
                             $oldFileToDelete = $prevRow['file_path'];
@@ -138,8 +145,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($prevRow && (int)$prevRow['vt_enabled'] !== $vt) {
                             db()->prepare('UPDATE `resources` SET `vt_report` = NULL, `vt_checked_at` = NULL WHERE `id` = ?')->execute([$id]);
                         }
-                        if ($oldFileToDelete && strpos($oldFileToDelete, $uploadDir) === 0 && is_file($oldFileToDelete)) {
-                            @unlink($oldFileToDelete);
+                        if ($oldFileToDelete) {
+                            $oldAbs = (preg_match('#^[a-zA-Z]:[/\\\\]#', $oldFileToDelete) || strpos($oldFileToDelete, '/') === 0)
+                                ? $oldFileToDelete
+                                : $baseDir . '/' . $oldFileToDelete;
+                            if (is_file($oldAbs)) @unlink($oldAbs);
                         }
                         $msg = '资源已更新';
                     }

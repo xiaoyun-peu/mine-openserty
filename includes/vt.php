@@ -145,6 +145,17 @@ function vt_get_by_md5(string $md5): ?array {
     }
 }
 
+/** 把数据库里的 file_path 解析成绝对路径 */
+function vt_resolve_file_path(string $filePath): string {
+    if ($filePath === '') return '';
+    // 已是绝对路径（Windows 盘符或 Unix 根路径）
+    if (preg_match('#^[a-zA-Z]:[/\\\\]#', $filePath) || strpos($filePath, '/') === 0) {
+        return $filePath;
+    }
+    // 相对路径统一按项目根目录 assets/ 解析
+    return __DIR__ . '/../assets/' . $filePath;
+}
+
 /** 取资源的 VT 报告（按 MD5 查，没有就传文件分析） */
 function vt_fetch_and_cache(array $resource): ?array {
     $md5 = $resource['md5'] ?? '';
@@ -162,8 +173,9 @@ function vt_fetch_and_cache(array $resource): ?array {
             $report = vt_get_by_md5($md5);
         }
         // 2) 查不到且有本地文件，上传分析
-        if (!$report && !empty($resource['file_path']) && is_file($resource['file_path'])) {
-            $report = vt_upload_file($resource['file_path']);
+        $absPath = !empty($resource['file_path']) ? vt_resolve_file_path($resource['file_path']) : '';
+        if (!$report && $absPath !== '' && is_file($absPath)) {
+            $report = vt_upload_file($absPath);
         }
         if (!$report) {
             throw new VtException('没有 MD5 也没有可用文件');

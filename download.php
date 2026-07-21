@@ -56,10 +56,16 @@ if (!$r) {
     exit('资源不存在');
 }
 
-// 本地上传
-if (!empty($r['file_path']) && is_file($r['file_path'])) {
-    $name = preg_replace('/^\d{8}_\d{6}_/', '', basename($r['file_path']));
-    stream_download($r['file_path'], $name !== '' ? $name : ('resource-' . $r['id']));
+// 本地上传（兼容旧绝对路径与新相对路径）
+if (!empty($r['file_path'])) {
+    $filePath = $r['file_path'];
+    if (!preg_match('#^[a-zA-Z]:[/\\\\]#', $filePath) && strpos($filePath, '/') !== 0) {
+        $filePath = __DIR__ . '/assets/' . $filePath;
+    }
+    if (is_file($filePath)) {
+        $name = preg_replace('/^\d{8}_\d{6}_/', '', basename($r['file_path']));
+        stream_download($filePath, $name !== '' ? $name : ('resource-' . $r['id']));
+    }
 }
 
 // 外部 URL
