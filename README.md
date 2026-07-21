@@ -1,6 +1,9 @@
 # Mineopenserty — Minecraft Server Website
 
-开箱即用的 Minecraft 服务器官网系统。PHP + MySQL 原生实现，深色扁平风格。
+开箱即用的 Minecraft 服务器官网系统。PHP + MySQL 原生实现。
+
+## 特点
+利用**Mine**craft**Open****Ser**verCommuni**ty**
 
 ## 功能
 
@@ -22,3 +25,6 @@
 ## 附加署名条款
 
 除遵守 MIT 许可证外，**任何使用本软件或其衍生作品的行为，均不得以任何形式移除、隐藏或更改软件用户界面及其他本项目署名信息**。
+
+## 声明
+Minecraft 是 Mojang Studios 的商标，本项目与 Mojang Studios 及 Microsoft 无关联。
