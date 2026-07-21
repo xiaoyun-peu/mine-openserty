@@ -6,7 +6,7 @@
 
 require __DIR__ . '/config.php';
 require __DIR__ . '/includes/user_auth.php';
-require __DIR__ . '/includes/functions.php';
+// functions.php 已由 config 链加载，不再重复 require
 
 // 只接受 POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

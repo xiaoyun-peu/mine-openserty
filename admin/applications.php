@@ -39,7 +39,7 @@ require __DIR__ . '/inc/admin_header.php';
 ?>
 
 <h1 class="admin-page-title">入服申请管理</h1>
-<p class="admin-page-desc">审核玩家的入服申请（每人最多 6 次）</p>
+<p class="admin-page-desc">审核玩家的入服申请</p>
 
 <?php if ($msg !== ''): ?>
   <div class="notice-bar" style="border-color:<?= $msgType==='ok'?'#6abf4b':'#e74c3c' ?>">
@@ -61,85 +61,83 @@ require __DIR__ . '/inc/admin_header.php';
     </div>
   </div>
 
-  <table class="admin-table">
-    <tr>
-      <th style="width:50px">ID</th>
-      <th style="width:110px">游戏 ID</th>
-      <th style="width:130px">联系方式</th>
-      <th style="width:60px">年龄</th>
-      <th>申请理由</th>
-      <th style="width:90px">状态</th>
-      <th style="width:100px">管理员备注</th>
-      <th style="width:90px">反馈</th>
-      <th style="width:140px">提交时间</th>
-      <th style="width:260px">操作</th>
-    </tr>
-    <?php foreach ($list as $a): ?>
-      <tr>
-        <td><?= e($a['id']) ?></td>
-        <td><?= e($a['game_id']) ?></td>
-        <td><?= e($a['contact']) ?></td>
-        <td><?= e($a['age'] ?? '—') ?></td>
-        <td style="max-width:200px;word-break:break-all;font-size:13px"><?= e(mb_strimwidth($a['reason'], 0, 50, '…')) ?></td>
-        <td><span class="badge badge-<?= $a['status']==='pending'?'orange':($a['status']==='approved'?'green':'red') ?>"><?= e($statusNames[$a['status']] ?? $a['status']) ?></span></td>
-        <td style="font-size:12px;max-width:100px;word-break:break-all"><?= !empty($a['admin_note']) ? e(mb_strimwidth($a['admin_note'], 0, 20, '…')) : '<span style="color:#555">—</span>' ?></td>
-        <td style="font-size:12px;max-width:90px;word-break:break-all"><?= !empty($a['feedback']) ? e(mb_strimwidth($a['feedback'], 0, 18, '…')) : '<span style="color:#555">—</span>' ?></td>
-        <td style="font-size:12px"><?= e(date('m-d H:i', strtotime($a['created_at']))) ?></td>
-        <td>
-          <?php if ($a['status'] === 'pending'): ?>
-            <button type="button" class="btn btn-outline btn-sm" onclick="showApprove(<?= e($a['id']) ?>)">审核</button>
-          <?php endif; ?>
-          <form method="post" class="inline-form" onsubmit="return confirm('确定删除该申请？')">
-            <?php admin_csrf_input(); ?>
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="id" value="<?= e($a['id']) ?>">
-            <button type="submit" class="btn btn-danger btn-sm">删</button>
-          </form>
-        </td>
-      </tr>
+  <?php if (empty($list)): ?>
+    <p style="color:#666;text-align:center;padding:24px">暂无申请</p>
+  <?php endif; ?>
 
-      <!-- 该申请的详情行（审核表单 + 理由全文） -->
-      <tr id="app-detail-<?= e($a['id']) ?>" style="display:none;background:#111">
-        <td colspan="10" style="padding:16px">
-          <div style="max-width:600px">
-            <p style="color:#aaa;font-size:14px;margin-bottom:8px"><strong>申请理由全文：</strong></p>
-            <p style="color:#ccc;font-size:14px;line-height:1.7;margin-bottom:16px"><?= nl2br(e($a['reason'])) ?></p>
+  <?php foreach ($list as $a): ?>
+  <div class="app-card" style="background:#111;border:1px solid #333;border-radius:4px;margin-bottom:10px;overflow:hidden">
+    <!-- 卡片头部（始终可见） -->
+    <div class="app-card-header" onclick="this.parentElement.classList.toggle('expanded')" style="display:flex;align-items:center;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background=''">
+      <span style="color:#6abf4b;font-weight:bold;margin-right:12px;min-width:30px">#<?= e($a['id']) ?></span>
+      <span style="margin-right:12px;min-width:90px"><?= e($a['game_id']) ?></span>
+      <span style="color:#aaa;margin-right:auto;min-width:100px"><?= e(date('m-d H:i', strtotime($a['created_at']))) ?></span>
+      <span class="badge badge-<?= $a['status']==='pending'?'orange':($a['status']==='approved'?'green':'red') ?>" style="margin-right:12px"><?= e($statusNames[$a['status']] ?? $a['status']) ?></span>
+      <svg width="12" height="12" viewBox="0 0 12 12" style="transition:transform .2s"><path d="M2 4l4 4 4-4" fill="none" stroke="#666" stroke-width="1.5"/></svg>
+      <span style="color:#666;font-size:12px;margin-left:6px">点击查看详情</span>
+      <!-- 删除按钮始终可见 -->
+      <form method="post" class="inline-form" style="margin-left:16px" onsubmit="event.stopPropagation();return confirm('确定删除该申请？')">
+        <?php admin_csrf_input(); ?>
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="<?= e($a['id']) ?>">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="event.stopPropagation()">删</button>
+      </form>
+    </div>
 
-            <form method="post">
-              <?php admin_csrf_input(); ?>
-              <input type="hidden" name="action" value="status">
-              <input type="hidden" name="id" value="<?= e($a['id']) ?>">
-              <div class="form-group">
-                <label class="form-label">管理员备注 <span style="color:#666;font-size:12px">（仅你和其它管理员可见）</span></label>
-                <textarea name="admin_note" class="form-textarea" style="min-height:60px" placeholder="内部备注，玩家看不到"><?= e($a['admin_note'] ?? '') ?></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label">反馈给玩家 <span style="color:#666;font-size:12px">（玩家在用户面板可见）</span></label>
-                <textarea name="feedback" class="form-textarea" style="min-height:60px" placeholder="通过的原因 / 拒绝的原因"><?= e($a['feedback'] ?? '') ?></textarea>
-              </div>
-              <div class="form-actions">
-                <button type="submit" name="status" value="approved" class="btn btn-primary btn-sm" style="background:#6abf4b;border-color:#6abf4b">通过</button>
-                <button type="submit" name="status" value="rejected" class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c">拒绝</button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="this.closest('tr').style.display='none'">关闭</button>
-              </div>
-            </form>
-          </div>
-        </td>
-      </tr>
-    <?php endforeach; ?>
-    <?php if (empty($list)): ?>
-      <tr><td colspan="10" style="text-align:center;color:#666">暂无申请</td></tr>
-    <?php endif; ?>
-  </table>
+    <!-- 展开区（默认折叠） -->
+    <div class="app-card-body" style="display:none;padding:16px;border-top:1px solid #333">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;color:#888;font-size:13px">
+        <span>联系方式：<?= e($a['contact']) ?></span>
+        <span>年龄：<?= e($a['age'] ?? '—') ?></span>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <p style="color:#aaa;font-size:13px;margin-bottom:6px"><strong>申请理由</strong></p>
+        <p style="color:#ccc;font-size:14px;line-height:1.7;white-space:pre-wrap"><?= e($a['reason']) ?></p>
+      </div>
+
+      <?php if (!empty($a['admin_note'])): ?>
+      <div style="margin-bottom:16px">
+        <p style="color:#aaa;font-size:13px;margin-bottom:6px"><strong>管理员备注</strong></p>
+        <p style="color:#999;font-size:13px;line-height:1.7"><?= e($a['admin_note']) ?></p>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!empty($a['feedback'])): ?>
+      <div style="margin-bottom:16px">
+        <p style="color:#aaa;font-size:13px;margin-bottom:6px"><strong>反馈给玩家</strong></p>
+        <p style="color:#6abf4b;font-size:13px;line-height:1.7"><?= e($a['feedback']) ?></p>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($a['status'] === 'pending'): ?>
+      <form method="post" style="margin-top:8px">
+        <?php admin_csrf_input(); ?>
+        <input type="hidden" name="action" value="status">
+        <input type="hidden" name="id" value="<?= e($a['id']) ?>">
+        <div class="form-group">
+          <label class="form-label">管理员备注（仅管理员可见）</label>
+          <textarea name="admin_note" class="form-textarea" style="min-height:50px" placeholder="内部备注"><?= e($a['admin_note'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">反馈给玩家（玩家可见）</label>
+          <textarea name="feedback" class="form-textarea" style="min-height:50px" placeholder="通过/拒绝的原因"><?= e($a['feedback'] ?? '') ?></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" name="status" value="approved" class="btn btn-primary btn-sm" style="background:#6abf4b;border-color:#6abf4b">通过</button>
+          <button type="submit" name="status" value="rejected" class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c">拒绝</button>
+        </div>
+      </form>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php endforeach; ?>
 </div>
 
 <script>
-function showApprove(id) {
-  // 隐藏所有详情行
-  document.querySelectorAll('[id^="app-detail-"]').forEach(function(r){ r.style.display='none'; });
-  var row = document.getElementById('app-detail-' + id);
-  if (row) row.style.display = '';
-}
+document.querySelectorAll('.app-card').forEach(function(card){
+  card.classList.remove('expanded');
+});
 </script>
 
 <?php require __DIR__ . '/inc/admin_footer.php'; ?>

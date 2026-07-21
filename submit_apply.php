@@ -5,7 +5,7 @@
 
 require __DIR__ . '/config.php';
 require __DIR__ . '/includes/user_auth.php';
-require __DIR__ . '/includes/functions.php';
+// functions.php 已由 config 链加载
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: apply.php');

@@ -41,9 +41,11 @@ if (!function_exists('csrf_verify')) {
 /**
  * 输出导航链接，当前页自动高亮
  */
+if (!function_exists('nav_link')) {
 function nav_link($href, $label, $page) {
     // href 形如 index.php / info.php#rules
     $file = strtok($href, '#');
     $active = ($file === $page) ? ' class="active"' : '';
     echo '<li><a href="' . e($href) . '"' . $active . '>' . e($label) . '</a></li>';
+}
 }
