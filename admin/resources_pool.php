@@ -373,7 +373,7 @@ function copyLink(id) {
   navigator.clipboard.writeText(url).then(function(){alert('链接已复制：'+url)}).catch(function(){prompt('复制此链接：',url)});
 }
 
-// 带进度的 AJAX 上传
+// 分块上传（1MB/chunk，不卡不死）
 function startUpload() {
   var input = document.getElementById('fileInput');
   var file = input.files[0];
@@ -385,46 +385,115 @@ function startUpload() {
   var name = document.getElementById('progressName');
   var form = document.getElementById('uploadForm');
 
+  var chunkSize = 1 * 1024 * 1024;
+  var totalChunks = Math.ceil(file.size / chunkSize);
+  var fileId = Date.now() + '-' + Math.random().toString(36).substr(2);
+  var sent = 0;
+
   wrap.style.display = 'flex';
   bar.style.width = '0%';
   pct.textContent = '0%';
   name.textContent = file.name;
+  name.style.color = '#ccc';
 
-  var fd = new FormData(form);
+  function sendChunk(idx) {
+    if (idx >= totalChunks) return;
+    var start = idx * chunkSize;
+    var end = Math.min(start + chunkSize, file.size);
+    var chunk = file.slice(start, end);
+    var fd = new FormData();
+    fd.append('file', chunk);
+    fd.append('fileName', file.name);
+    fd.append('origName', file.name);
+    fd.append('chunkIndex', idx);
+    fd.append('totalChunks', totalChunks);
+    fd.append('fileId', fileId);
+    fd.append('tab', '<?= $tab ?>');
+    fd.append('folder', form.querySelector('[name=folder]').value || '');
+    fd.append('_csrf', form.querySelector('[name=_csrf]').value);
 
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', form.action || window.location.href, true);
+    fetch('upload_chunk.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.error) { name.textContent = data.error; name.style.color = '#e74c3c'; return; }
+        sent++;
+        var p = Math.round(sent / totalChunks * 100);
+        bar.style.width = p + '%';
+        pct.textContent = p + '%';
+        if (data.done) {
+          // 上传完成
+          bar.style.width = '100%';
+          pct.textContent = '100%';
+          setTimeout(function(){
+            var u = new URL(window.location.href);
+            u.searchParams.set('uploaded', data.id);
+            window.location.href = u.toString();
+          }, 300);
+        }
+      })
+      .catch(function(){
+        // 失败重试一次
+        setTimeout(function(){ sendChunk(idx); }, 500);
+      });
+  }
 
-  xhr.upload.addEventListener('progress', function(e) {
-    if (e.lengthComputable) {
-      var p = Math.round(e.loaded / e.total * 100);
-      bar.style.width = p + '%';
-      pct.textContent = p + '%';
-    }
-  });
+  // 串行发送分片（避免服务器压力）
+  var i = 0;
+  function next() {
+    if (i < totalChunks) { sendChunk(i); i++; }
+    else return;
+  }
+  // 流水线：发送下一个时上一个还在传
+  function pipeline() {
+    for (var j = 0; j < 3 && i < totalChunks; j++) { sendChunk(i); i++; }
+  }
+  // 用并发管道代替串行，更快
+  var inFlight = 0;
+  function sendWithPipe(idx) {
+    if (idx >= totalChunks) return;
+    inFlight++;
+    var start = idx * chunkSize;
+    var end = Math.min(start + chunkSize, file.size);
+    var chunk = file.slice(start, end);
+    var fd = new FormData();
+    fd.append('file', chunk);
+    fd.append('fileName', file.name);
+    fd.append('origName', file.name);
+    fd.append('chunkIndex', idx);
+    fd.append('totalChunks', totalChunks);
+    fd.append('fileId', fileId);
+    fd.append('tab', '<?= $tab ?>');
+    fd.append('folder', form.querySelector('[name=folder]').value || '');
+    fd.append('_csrf', form.querySelector('[name=_csrf]').value);
 
-  xhr.onload = function() {
-    if (xhr.status >= 200 && xhr.status < 400) {
-      bar.style.width = '100%';
-      pct.textContent = '100%';
-      var newId = xhr.responseText;
-      setTimeout(function(){
-        var u = new URL(window.location.href);
-        u.searchParams.set('uploaded', newId);
-        window.location.href = u.toString();
-      }, 300);
-    } else {
-      name.textContent = '上传失败';
-      name.style.color = '#e74c3c';
-    }
-  };
+    fetch('upload_chunk.php', { method:'POST', body:fd })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.error) { name.textContent = data.error; name.style.color = '#e74c3c'; return; }
+        sent++;
+        var p = Math.round(sent / totalChunks * 100);
+        bar.style.width = p + '%';
+        pct.textContent = p + '%';
+        if (data.done) {
+          bar.style.width = '100%';
+          pct.textContent = '100%';
+          setTimeout(function(){
+            var u = new URL(window.location.href);
+            u.searchParams.set('uploaded', data.id);
+            window.location.href = u.toString();
+          }, 300);
+        }
+      })
+      .catch(function(){ setTimeout(function(){ sendWithPipe(idx); }, 500); })
+      .finally(function(){
+        inFlight--;
+        while (inFlight < 3 && i < totalChunks) { sendWithPipe(i); i++; }
+      });
 
-  xhr.onerror = function() {
-    name.textContent = '网络错误';
-    name.style.color = '#e74c3c';
-  };
-
-  xhr.send(fd);
+    if (inFlight < 3 && i < totalChunks) { sendWithPipe(i); i++; }
+  }
+  // 启动流水线
+  for (var k = 0; k < 3 && i < totalChunks; k++) { sendWithPipe(i); i++; }
 }
 </script>
 
