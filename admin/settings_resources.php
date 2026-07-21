@@ -79,39 +79,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msgType = 'err';
             } else {
                 if ($action === 'edit') {
-                    $stmt = db()->prepare('SELECT `vt_enabled` FROM `resources` WHERE `id` = ?');
+                    $stmt = db()->prepare('SELECT * FROM `resources` WHERE `id` = ?');
                     $stmt->execute([$id]);
                     $prevRow = $stmt->fetch();
                 }
                 $filePath = null;
                 $md5 = null;
                 $fileSize = null;
-                $errorDetail = '';
+                $oldFileToDelete = null;
 
-                // 上传了文件
-                if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-                    $orig = $_FILES['file']['name'];
-                    $tmp  = $_FILES['file']['tmp_name'];
-                    $size = (int)$_FILES['file']['size'];
+                // 分块上传完成后由 JS 回填的文件信息
+                $upPath = trim($_POST['uploaded_file_path'] ?? '');
+                if ($upPath && strpos($upPath, $uploadDir) === 0 && is_file($upPath)) {
+                    $orig = trim($_POST['uploaded_original_name'] ?? basename($upPath));
+                    $size = (int)($_POST['uploaded_file_size'] ?? filesize($upPath));
                     if (is_blocked_resource_upload($orig)) {
+                        @unlink($upPath);
                         $msg = '禁止上传服务器可执行脚本文件';
                         $msgType = 'err';
                     } elseif ($size > 200 * 1024 * 1024) {
+                        @unlink($upPath);
                         $msg = '文件超过 200MB 限制';
                         $msgType = 'err';
                     } else {
-                        // 保留原始文件名但加时间戳防重名
-                        $safe = preg_replace('/[^\w\.\-]+/u', '_', $orig) ?: 'file';
-                        $dest = $uploadDir . '/' . date('Ymd_His') . '_' . $safe;
-                        if (!@move_uploaded_file($tmp, $dest)) {
-                            $msg = '文件保存失败';
-                            $msgType = 'err';
-                        } else {
-                            $filePath = $dest;
-                            $md5 = md5_file($dest);
-                            $fileSize = $size;
+                        $filePath = $upPath;
+                        $md5 = trim($_POST['uploaded_md5'] ?? '') ?: md5_file($upPath);
+                        $fileSize = $size;
+                        if ($action === 'edit' && $prevRow && $prevRow['file_path'] && $prevRow['file_path'] !== $upPath) {
+                            $oldFileToDelete = $prevRow['file_path'];
                         }
                     }
+                } elseif ($action === 'edit' && $prevRow) {
+                    // 编辑且没传新文件，保留原文件
+                    $filePath = $prevRow['file_path'];
+                    $md5      = $prevRow['md5'];
+                    $fileSize = $prevRow['file_size'];
                 }
 
                 if ($msg === '') {
@@ -125,12 +127,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $msg .= $r ? '，VirusTotal 报告已获取' : '，VirusTotal 报告暂时不可用';
                         }
                     } else {
-                        // 编辑时不改文件，只更新其他字段
-                        $stmt = db()->prepare('UPDATE `resources` SET `name` = ?, `desc` = ?, `url` = ?, `vt_enabled` = ?, `sort` = ? WHERE `id` = ?');
-                        $stmt->execute([$name, $desc, $url, $vt, $sort, $id]);
+                        if ($filePath !== null) {
+                            $stmt = db()->prepare('UPDATE `resources` SET `name` = ?, `desc` = ?, `url` = ?, `file_path` = ?, `md5` = ?, `file_size` = ?, `vt_enabled` = ?, `sort` = ? WHERE `id` = ?');
+                            $stmt->execute([$name, $desc, $url, $filePath, $md5, $fileSize, $vt, $sort, $id]);
+                        } else {
+                            $stmt = db()->prepare('UPDATE `resources` SET `name` = ?, `desc` = ?, `url` = ?, `vt_enabled` = ?, `sort` = ? WHERE `id` = ?');
+                            $stmt->execute([$name, $desc, $url, $vt, $sort, $id]);
+                        }
                         // 改了 vt 开关就清缓存
                         if ($prevRow && (int)$prevRow['vt_enabled'] !== $vt) {
                             db()->prepare('UPDATE `resources` SET `vt_report` = NULL, `vt_checked_at` = NULL WHERE `id` = ?')->execute([$id]);
+                        }
+                        if ($oldFileToDelete && strpos($oldFileToDelete, $uploadDir) === 0 && is_file($oldFileToDelete)) {
+                            @unlink($oldFileToDelete);
                         }
                         $msg = '资源已更新';
                     }
@@ -211,12 +220,18 @@ require __DIR__ . '/inc/admin_header.php';
 <div class="admin-card">
   <h3>其他资源</h3>
 
-  <form method="post" enctype="multipart/form-data" style="background:#161616;padding:16px;margin-bottom:16px;border:1px solid #333">
+  <form method="post" id="resourceForm" style="background:#161616;padding:16px;margin-bottom:16px;border:1px solid #333">
     <?php admin_csrf_input(); ?>
     <input type="hidden" name="action" value="<?= $editRow ? 'edit' : 'add' ?>">
     <?php if ($editRow): ?>
       <input type="hidden" name="id" value="<?= e($editRow['id']) ?>">
     <?php endif; ?>
+
+    <!-- 分块上传回填字段 -->
+    <input type="hidden" name="uploaded_file_path" id="uploaded_file_path" value="">
+    <input type="hidden" name="uploaded_original_name" id="uploaded_original_name" value="">
+    <input type="hidden" name="uploaded_md5" id="uploaded_md5" value="">
+    <input type="hidden" name="uploaded_file_size" id="uploaded_file_size" value="">
 
     <div class="form-row" style="grid-template-columns:2fr 3fr 2fr 1fr">
       <div class="form-group" style="margin-bottom:12px">
@@ -238,8 +253,19 @@ require __DIR__ . '/inc/admin_header.php';
     </div>
 
     <div class="form-group">
-      <label class="form-label">上传文件 <span style="color:#666;font-size:12px">最大 200MB；上传后会自动计算 MD5 并（若勾选）提交 VirusTotal 校验</span></label>
-      <input type="file" name="file" class="form-input">
+      <label class="form-label">上传文件 <span style="color:#666;font-size:12px">最大 200MB；点按钮直接选文件，上传完成后点“添加资源”保存</span></label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <input type="file" id="resFileInput" style="display:none" onchange="startResourceUpload()">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('resFileInput').click()">选择文件</button>
+        <span id="resFileName" style="color:#888;font-size:13px">未选择文件</span>
+      </div>
+      <!-- 进度条 -->
+      <div id="resProgressWrap" style="display:none;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="flex:1;background:#222;height:6px;border-radius:3px;overflow:hidden">
+          <div id="resProgressBar" style="height:100%;background:#6abf4b;width:0%;transition:width .2s"></div>
+        </div>
+        <span id="resProgressPct" style="color:#6abf4b;font-size:12px;min-width:36px">0%</span>
+      </div>
       <?php if ($editRow && $editRow['file_path']): ?>
         <div style="font-size:12px;color:#888;margin-top:6px">
           当前文件：<?= e(basename($editRow['file_path'])) ?>（<?= e($editRow['md5'] ?: '—') ?>，<?= round(($editRow['file_size'] ?? 0)/1024) ?> KB）
@@ -251,10 +277,10 @@ require __DIR__ . '/inc/admin_header.php';
       <label class="form-label" style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" name="vt_enabled" value="1" <?= ($editRow['vt_enabled'] ?? 1) ? 'checked' : '' ?>>
         VirusTotal 校验（默认勾选；前台"查看安全校验"会跳到 VirusTotal 官方报告页）
-      </label>
+        </label>
     </div>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary btn-sm"><?= $editRow ? '保存修改' : '添加资源' ?></button>
+      <button type="submit" class="btn btn-primary btn-sm" id="resSubmitBtn"><?= $editRow ? '保存修改' : '添加资源' ?></button>
       <?php if ($editRow): ?>
         <a href="settings_resources.php" class="btn btn-outline btn-sm">取消编辑</a>
       <?php endif; ?>
@@ -318,5 +344,145 @@ require __DIR__ . '/inc/admin_header.php';
     <?php endif; ?>
   </table>
 </div>
+
+<script>
+// 资源下载设置 - 分块上传
+function startResourceUpload() {
+  var input = document.getElementById('resFileInput');
+  var file = input.files[0];
+  if (!file) return;
+
+  var form = document.getElementById('resourceForm');
+  var nameEl = document.getElementById('resFileName');
+  var wrap = document.getElementById('resProgressWrap');
+  var bar = document.getElementById('resProgressBar');
+  var pct = document.getElementById('resProgressPct');
+  var btn = document.getElementById('resSubmitBtn');
+
+  var chunkSize = 1 * 1024 * 1024;
+  var totalChunks = Math.ceil(file.size / chunkSize);
+  var fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  var completed = 0;
+  var inFlight = 0;
+  var nextIdx = 0;
+  var failed = false;
+  var concurrency = 2;
+  var maxRetries = 3;
+  var chunkTimeout = 60000;
+
+  // 清空旧回填
+  document.getElementById('uploaded_file_path').value = '';
+  document.getElementById('uploaded_original_name').value = '';
+  document.getElementById('uploaded_md5').value = '';
+  document.getElementById('uploaded_file_size').value = '';
+
+  nameEl.textContent = file.name;
+  nameEl.style.color = '#ccc';
+  wrap.style.display = 'flex';
+  bar.style.width = '0%';
+  pct.textContent = '0%';
+  btn.disabled = true;
+  btn.textContent = '上传中…';
+
+  function updateProgress() {
+    var p = totalChunks ? Math.round(completed / totalChunks * 100) : 100;
+    bar.style.width = p + '%';
+    pct.textContent = p + '%';
+  }
+
+  function fatal(msg) {
+    failed = true;
+    nameEl.textContent = msg;
+    nameEl.style.color = '#e74c3c';
+    btn.disabled = false;
+    btn.textContent = document.getElementById('resourceForm').querySelector('[name=action]').value === 'edit' ? '保存修改' : '添加资源';
+  }
+
+  function finish(data) {
+    updateProgress();
+    document.getElementById('uploaded_file_path').value = data.file_path || '';
+    document.getElementById('uploaded_original_name').value = data.original_name || file.name;
+    document.getElementById('uploaded_md5').value = data.md5 || '';
+    document.getElementById('uploaded_file_size').value = data.file_size || file.size;
+    nameEl.textContent = file.name + '（上传完成，可保存）';
+    nameEl.style.color = '#6abf4b';
+    btn.disabled = false;
+    btn.textContent = document.getElementById('resourceForm').querySelector('[name=action]').value === 'edit' ? '保存修改' : '添加资源';
+  }
+
+  function sendChunk(idx, attempt) {
+    attempt = attempt || 1;
+    if (failed || idx >= totalChunks) return;
+    inFlight++;
+
+    var start = idx * chunkSize;
+    var end = Math.min(start + chunkSize, file.size);
+    var chunk = file.slice(start, end);
+    var fd = new FormData();
+    fd.append('file', chunk, file.name);
+    fd.append('fileName', file.name);
+    fd.append('fileId', fileId);
+    fd.append('chunkIndex', idx);
+    fd.append('totalChunks', totalChunks);
+    fd.append('_csrf', form.querySelector('[name=_csrf]').value);
+
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, chunkTimeout);
+
+    fetch('upload_resource_chunk.php', { method:'POST', body:fd, credentials:'same-origin', signal:controller.signal })
+      .then(function(r){
+        clearTimeout(timer);
+        if (!r.ok) {
+          if (r.status === 403) throw new Error('会话已过期，请刷新页面后重试');
+          throw new Error('HTTP ' + r.status);
+        }
+        return r.json();
+      })
+      .then(function(data){
+        if (data.error) throw new Error(data.error);
+        completed++;
+        updateProgress();
+        if (data.done) { finish(data); }
+      })
+      .catch(function(err){
+        clearTimeout(timer);
+        if (failed) return;
+        var isAbort = err.name === 'AbortError';
+        var errMsg = isAbort ? '块 ' + idx + ' 上传超时' : (err.message || '网络错误');
+        if (attempt < maxRetries && (isAbort || err.message.indexOf('HTTP') !== -1 || err.message.indexOf('网络') !== -1 || err.message.indexOf('fetch') !== -1)) {
+          nameEl.textContent = file.name + '（块 ' + (idx+1) + '/' + totalChunks + ' 重试 ' + attempt + '/' + maxRetries + '）';
+          setTimeout(function(){ sendChunk(idx, attempt + 1); }, attempt * 1500);
+        } else {
+          fatal('上传失败：' + errMsg);
+        }
+      })
+      .finally(function(){
+        inFlight--;
+        pump();
+      });
+  }
+
+  function pump() {
+    while (!failed && inFlight < concurrency && nextIdx < totalChunks) {
+      sendChunk(nextIdx++);
+    }
+  }
+
+  pump();
+}
+
+// 提交时如果选了文件但还没传完，先提示
+var resourceForm = document.getElementById('resourceForm');
+resourceForm.addEventListener('submit', function(e) {
+  var input = document.getElementById('resFileInput');
+  if (input.files[0] && !document.getElementById('uploaded_file_path').value) {
+    var btn = document.getElementById('resSubmitBtn');
+    if (btn.disabled) {
+      e.preventDefault();
+      alert('文件正在上传，请等待完成后再保存');
+    }
+  }
+});
+</script>
 
 <?php require __DIR__ . '/inc/admin_footer.php'; ?>
