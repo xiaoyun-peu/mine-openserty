@@ -46,37 +46,63 @@ require __DIR__ . '/includes/header.php';
             </p>
           </div>
 
+          <?php
+            // 语音频道
+            $voiceChannels = db()->query('SELECT * FROM `voice_channels` ORDER BY `sort`, `id`')->fetchAll();
+            if (!empty($voiceChannels)):
+          ?>
           <div class="card" style="margin-bottom:16px">
-            <h3 class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf4b" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M6 8h12v8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/><path d="M9 8V6M15 8V6M3 12h3M18 12h3"/><path d="M9.5 12h.01M14.5 12h.01"/></svg>Oopz 频道</h3>
+            <h3 class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf4b" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M6 8h12v8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/><path d="M9 8V6M15 8V6M3 12h3M18 12h3"/></svg>语音频道</h3>
             <p class="card-text">语音频道、公告推送和机器人指令，玩家日常交流的主阵地。</p>
             <p style="margin-top:12px">
-              <a href="<?= e(setting('oopz_url', OOPZ_URL)) ?>" target="_blank" class="btn btn-outline" style="padding:6px 14px;font-size:13px">加入 Oopz 频道</a>
+              <?php foreach ($voiceChannels as $vc): ?>
+                <a href="<?= e($vc['url']) ?>" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px"><?= e($vc['name']) ?></a>
+              <?php endforeach; ?>
             </p>
           </div>
+          <?php endif; ?>
 
           <div class="card" style="margin-bottom:16px">
             <h3 class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf4b" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><rect x="3" y="5" width="18" height="14"/><path d="M3 7l9 6 9-6"/></svg>电子邮箱</h3>
             <p class="card-text">非紧急事务、申诉、商务合作请发送邮件。</p>
-            <p style="margin-top:12px">
+            <p style="margin-top:12">
               <span class="tag tag-blue"><?= e(setting('contact_email', CONTACT_EMAIL)) ?></span>
             </p>
           </div>
 
+          <?php
+            // 社交媒体
+            $socialMedia = db()->query('SELECT * FROM `social_media` ORDER BY `sort`, `id`')->fetchAll();
+            if (!empty($socialMedia)):
+          ?>
           <div class="card">
             <h3 class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf4b" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.2 10.8l6.6-3.6M8.2 13.2l6.6 3.6"/></svg>社交媒体</h3>
             <p class="card-text">关注我们的社交媒体账号获取最新动态。</p>
-            <p style="margin-top:12px">
+            <p style="margin-top:12">
               <a href="<?= e(setting('bilibili_url', BILIBILI_URL)) ?>" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px">Bilibili</a>
               <a href="<?= e(setting('mcbbs_url', MCBBS_URL)) ?>" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px">MCBBS</a>
-              <?php
-                try {
-                    foreach (db()->query('SELECT * FROM `social_media` ORDER BY `sort`, `id`') as $sm) {
-                        echo '<a href="' . e($sm['url']) . '" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px">' . e($sm['name']) . '</a> ';
-                    }
-                } catch (Throwable $e) {}
-              ?>
+              <?php foreach ($socialMedia as $sm): ?>
+                <a href="<?= e($sm['url']) ?>" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px"><?= e($sm['name']) ?></a>
+              <?php endforeach; ?>
             </p>
           </div>
+          <?php endif; ?>
+
+          <?php
+            // 社区群聊
+            $groupChats = db()->query('SELECT * FROM `group_chats` ORDER BY `sort`, `id`')->fetchAll();
+            if (!empty($groupChats)):
+          ?>
+          <div class="card">
+            <h3 class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf4b" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M4 4h16v11H9l-5 4V4z"/></svg>社区群聊</h3>
+            <p class="card-text">加入社区群聊与其他玩家实时交流。</p>
+            <p style="margin-top:12px">
+              <?php foreach ($groupChats as $gc): ?>
+                <a href="<?= e($gc['url']) ?>" target="_blank" class="btn btn-dark" style="padding:6px 14px;font-size:13px"><?= e($gc['name']) ?></a>
+              <?php endforeach; ?>
+            </p>
+          </div>
+          <?php endif; ?>
         </div>
 
         <div>

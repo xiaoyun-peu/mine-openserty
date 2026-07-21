@@ -38,6 +38,12 @@ $_f_mcbbsUrl   = function_exists('setting') ? setting('mcbbs_url', '#') : '#';
                       foreach (db()->query('SELECT * FROM `social_media` ORDER BY `sort`, `id` LIMIT 6') as $_sm) {
                           echo '<li><a href="' . e($_sm['url']) . '" target="_blank">' . e($_sm['name']) . '</a></li>';
                       }
+                      foreach (db()->query('SELECT * FROM `voice_channels` ORDER BY `sort`, `id` LIMIT 6') as $_vc) {
+                          echo '<li><a href="' . e($_vc['url']) . '" target="_blank">' . e($_vc['name']) . '</a></li>';
+                      }
+                      foreach (db()->query('SELECT * FROM `group_chats` ORDER BY `sort`, `id` LIMIT 6') as $_gc) {
+                          echo '<li><a href="' . e($_gc['url']) . '" target="_blank">' . e($_gc['name']) . '</a></li>';
+                      }
                   } catch (Throwable $e) {}
               }
             ?>

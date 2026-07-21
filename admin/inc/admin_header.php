@@ -62,7 +62,7 @@ $me = admin_user();
         </li>
 
         <!-- 网站设置（下拉选项卡） -->
-        <li class="<?= in_array($ADMIN_PAGE, ['settings_external','settings_site','settings_community','settings_resources','settings_home','content']) ? 'open' : '' ?>">
+        <li class="<?= in_array($ADMIN_PAGE, ['settings_external','settings_site','settings_community','settings_resources','settings_home','content','resources_pool']) ? 'open' : '' ?>">
           <span class="side-toggle" onclick="this.parentElement.classList.toggle('open')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.1-1.2L14 3h-4l-.5 2.7a7 7 0 0 0-2.1 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.1 1.2L10 21h4l.5-2.7a7 7 0 0 0 2.1-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2z"/></svg>
             网站设置
@@ -75,6 +75,7 @@ $me = admin_user();
             <li><a href="settings_community.php" class="<?= $ADMIN_PAGE === 'settings_community' ? 'active' : '' ?>">社区设置</a></li>
             <li><a href="settings_resources.php" class="<?= $ADMIN_PAGE === 'settings_resources' ? 'active' : '' ?>">资源下载设置</a></li>
             <li><a href="settings_home.php" class="<?= $ADMIN_PAGE === 'settings_home' ? 'active' : '' ?>">首页设置</a></li>
+            <li><a href="resources_pool.php" class="<?= $ADMIN_PAGE === 'resources_pool' ? 'active' : '' ?>">资源池管理</a></li>
           </ul>
         </li>
       </ul>

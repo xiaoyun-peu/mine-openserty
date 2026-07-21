@@ -100,7 +100,38 @@ function db_migrate(PDO $pdo): void {
         "ALTER TABLE `resources` ADD COLUMN `file_size` BIGINT NULL AFTER `md5`",
         "ALTER TABLE `applications` ADD COLUMN `admin_note` TEXT NULL AFTER `status`",
         "ALTER TABLE `applications` ADD COLUMN `feedback` TEXT NULL AFTER `admin_note`",
+        // 社区扩展（2026-07-21）
+        "ALTER TABLE `social_media` ADD COLUMN `description` VARCHAR(200) NULL AFTER `url`",
+        "ALTER TABLE `voice_channels` ADD COLUMN `description` VARCHAR(200) NULL AFTER `url`",
     ];
+
+    // 新表迁移（不存在则创建）
+    $newTables = array_merge($newTables, [
+        "CREATE TABLE IF NOT EXISTS `group_chats` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `name` VARCHAR(100) NOT NULL,
+          `url` VARCHAR(300) NOT NULL,
+          `description` VARCHAR(200) NULL,
+          `sort` INT NOT NULL DEFAULT 0,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "CREATE TABLE IF NOT EXISTS `resource_pool` (
+          `id` INT PRIMARY KEY,
+          `filename` VARCHAR(200) NOT NULL,
+          `original_name` VARCHAR(300) NOT NULL,
+          `file_path` VARCHAR(500) NOT NULL,
+          `file_size` BIGINT NULL,
+          `folder` VARCHAR(500) NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "CREATE TABLE IF NOT EXISTS `resource_folders` (
+          `id` INT AUTO_INCREMENT PRIMARY KEY,
+          `parent_id` INT NULL,
+          `name` VARCHAR(100) NOT NULL,
+          `path` VARCHAR(500) NOT NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+    ]);
     foreach ($patches as $sql) {
         try { $pdo->exec($sql); } catch (Throwable $e) {}
     }

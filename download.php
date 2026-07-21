@@ -3,17 +3,7 @@ require __DIR__ . '/config.php';
 require __DIR__ . '/includes/functions.php';
 require __DIR__ . '/includes/db.php';
 
-$id = (int)($_GET['id'] ?? 0);
-try {
-    $stmt = db()->prepare('SELECT * FROM `resources` WHERE `id` = ?');
-    $stmt->execute([$id]);
-    $r = $stmt->fetch();
-} catch (Throwable $e) { $r = null; }
-
-if (!$r) {
-    http_response_code(404);
-    exit('资源不存在');
-}
+$id = (int)($_GET['id'] ?? -1);
 
 function stream_download(string $filePath, string $downloadName): void {
     $size = filesize($filePath);
@@ -40,13 +30,39 @@ function stream_download(string $filePath, string $downloadName): void {
     exit;
 }
 
-// 本地上传：始终通过 PHP 以附件形式流式下载，避免把文件复制到公开目录。
+// 先查资源池
+$uploadDir = __DIR__ . '/uploads';
+try {
+    $stmt = db()->prepare('SELECT * FROM `resource_pool` WHERE `id` = ?');
+    $stmt->execute([$id]);
+    $rp = $stmt->fetch();
+    if ($rp) {
+        $filePath = $uploadDir . '/' . $rp['file_path'];
+        if (is_file($filePath)) {
+            stream_download($filePath, $rp['original_name']);
+        }
+    }
+} catch (Throwable $e) {}
+
+// 再查旧 resources 表
+try {
+    $stmt = db()->prepare('SELECT * FROM `resources` WHERE `id` = ?');
+    $stmt->execute([$id]);
+    $r = $stmt->fetch();
+} catch (Throwable $e) { $r = null; }
+
+if (!$r) {
+    http_response_code(404);
+    exit('资源不存在');
+}
+
+// 本地上传
 if (!empty($r['file_path']) && is_file($r['file_path'])) {
     $name = preg_replace('/^\d{8}_\d{6}_/', '', basename($r['file_path']));
     stream_download($r['file_path'], $name !== '' ? $name : ('resource-' . $r['id']));
 }
 
-// 外部 URL：跳过去
+// 外部 URL
 if (!empty($r['url'])) {
     header('Location: ' . $r['url']);
     exit;
