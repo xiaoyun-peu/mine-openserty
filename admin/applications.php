@@ -20,6 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             db()->prepare('UPDATE `applications` SET `status` = ?, `admin_note` = ?, `feedback` = ? WHERE `id` = ?')->execute([$status, $note, $feedback, $id]);
             $msg = '审核完成：状态已更新';
         }
+    } elseif ($action === 'note') {
+        $note     = trim($_POST['admin_note'] ?? '');
+        $feedback = trim($_POST['feedback'] ?? '');
+        db()->prepare('UPDATE `applications` SET `admin_note` = ?, `feedback` = ? WHERE `id` = ?')->execute([$note, $feedback, $id]);
+        $msg = '备注已保存';
     } elseif ($action === 'delete') {
         db()->prepare('DELETE FROM `applications` WHERE `id` = ?')->execute([$id]);
         $msg = '申请已删除';
@@ -96,24 +101,9 @@ require __DIR__ . '/inc/admin_header.php';
         <p style="color:#ccc;font-size:14px;line-height:1.7;white-space:pre-wrap"><?= e($a['reason']) ?></p>
       </div>
 
-      <?php if (!empty($a['admin_note'])): ?>
-      <div style="margin-bottom:16px">
-        <p style="color:#aaa;font-size:13px;margin-bottom:6px"><strong>管理员备注</strong></p>
-        <p style="color:#999;font-size:13px;line-height:1.7"><?= e($a['admin_note']) ?></p>
-      </div>
-      <?php endif; ?>
-
-      <?php if (!empty($a['feedback'])): ?>
-      <div style="margin-bottom:16px">
-        <p style="color:#aaa;font-size:13px;margin-bottom:6px"><strong>反馈给玩家</strong></p>
-        <p style="color:#6abf4b;font-size:13px;line-height:1.7"><?= e($a['feedback']) ?></p>
-      </div>
-      <?php endif; ?>
-
-      <?php if ($a['status'] === 'pending'): ?>
       <form method="post" style="margin-top:8px">
         <?php admin_csrf_input(); ?>
-        <input type="hidden" name="action" value="status">
+        <input type="hidden" name="action" value="<?= $a['status']==='pending'?'status':'note' ?>">
         <input type="hidden" name="id" value="<?= e($a['id']) ?>">
         <div class="form-group">
           <label class="form-label">管理员备注（仅管理员可见）</label>
@@ -124,11 +114,14 @@ require __DIR__ . '/inc/admin_header.php';
           <textarea name="feedback" class="form-textarea" style="min-height:50px" placeholder="通过/拒绝的原因"><?= e($a['feedback'] ?? '') ?></textarea>
         </div>
         <div class="form-actions">
-          <button type="submit" name="status" value="approved" class="btn btn-primary btn-sm" style="background:#6abf4b;border-color:#6abf4b">通过</button>
-          <button type="submit" name="status" value="rejected" class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c">拒绝</button>
+          <?php if ($a['status'] === 'pending'): ?>
+            <button type="submit" name="status" value="approved" class="btn btn-primary btn-sm" style="background:#6abf4b;border-color:#6abf4b">通过</button>
+            <button type="submit" name="status" value="rejected" class="btn btn-outline btn-sm" style="color:#e74c3c;border-color:#e74c3c">拒绝</button>
+          <?php else: ?>
+            <button type="submit" class="btn btn-primary btn-sm">保存备注</button>
+          <?php endif; ?>
         </div>
       </form>
-      <?php endif; ?>
     </div>
   </div>
   <?php endforeach; ?>
