@@ -47,7 +47,7 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($infoItems as $it): ?>
           <tr>
             <td><?= e($it['k']) ?></td>
-            <td><?= $it['k'] === '服务器地址'
+            <td><?= !empty($it['highlight'])
                   ? '<code style="color:#6abf4b;font-family:monospace">' . e($it['v']) . '</code>'
                   : e($it['v']) ?></td>
           </tr>

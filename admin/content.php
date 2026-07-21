@@ -9,11 +9,21 @@ $msgType = 'ok';
 
 // 各表配置：表名 => [主键, 字段列表(可编辑), 字段标签]
 $sections = [
-    'info_items' => ['label' => '基本信息项', 'fields' => ['k' => '项目', 'v' => '详情', 'sort' => '排序'], 'text' => ['v']],
+    'info_items' => ['label' => '基本信息项', 'fields' => ['k' => '项目', 'v' => '详情', 'highlight' => '高亮', 'sort' => '排序'], 'text' => ['v'], 'bool' => ['highlight']],
     'rules'      => ['label' => '服务器规则', 'fields' => ['title' => '标题', 'content' => '内容', 'sort' => '排序'], 'text' => ['content']],
     'commands'   => ['label' => '常用指令',   'fields' => ['command' => '指令', 'func' => '功能', 'note' => '说明', 'sort' => '排序'], 'text' => []],
     'faqs'       => ['label' => '常见问题',   'fields' => ['question' => '问题', 'answer' => '答案', 'sort' => '排序'], 'text' => ['answer']],
 ];
+
+/** 确保 info_items 表有 highlight 列（兼容旧数据库） */
+function ensure_info_items_highlight(): void {
+    try {
+        db()->exec("ALTER TABLE `info_items` ADD COLUMN `highlight` TINYINT(1) NOT NULL DEFAULT 0");
+    } catch (Throwable $e) {
+        // 列已存在则忽略
+    }
+}
+ensure_info_items_highlight();
 
 /** 删除后重新回收/连续编号 ID */
 function reorder_table_ids(string $table): void {
@@ -43,10 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = '已删除并重新排序';
         } elseif ($action === 'add' || $action === 'edit') {
             // 收集字段
+            $boolFields = $sections[$section]['bool'] ?? [];
             $data = [];
             foreach ($fields as $f) {
-                $val = trim($_POST[$f] ?? '');
-                if ($f === 'sort') $val = (int)$val;
+                if (in_array($f, $boolFields)) {
+                    // checkbox 未勾选时不在 POST 中，默认 0
+                    $val = isset($_POST[$f]) ? (int)$_POST[$f] : 0;
+                } else {
+                    $val = trim($_POST[$f] ?? '');
+                    if ($f === 'sort') $val = (int)$val;
+                }
                 $data[$f] = $val;
             }
             // 非 sort 必填
@@ -117,10 +133,15 @@ require __DIR__ . '/inc/admin_header.php';
       <?php endif; ?>
 
       <div class="form-row" style="grid-template-columns:repeat(<?= count($cfg['fields']) ?>, 1fr)">
-        <?php foreach ($cfg['fields'] as $f => $label): ?>
+        <?php $boolFields = $cfg['bool'] ?? []; foreach ($cfg['fields'] as $f => $label): ?>
           <div class="form-group" style="margin-bottom:12px">
             <label class="form-label"><?= e($label) ?></label>
-            <?php if (in_array($f, $cfg['text'])): ?>
+            <?php if (in_array($f, $boolFields)): ?>
+              <div style="padding-top:4px">
+                <input type="hidden" name="<?= e($f) ?>" value="0">
+                <input type="checkbox" name="<?= e($f) ?>" value="1" <?= !empty($editRow[$f]) ? 'checked' : '' ?> style="accent-color:#6abf4b;width:16px;height:16px">
+              </div>
+            <?php elseif (in_array($f, $cfg['text'])): ?>
               <textarea name="<?= e($f) ?>" class="form-textarea" style="min-height:70px"><?= e($editRow[$f] ?? '') ?></textarea>
             <?php else: ?>
               <input type="<?= $f === 'sort' ? 'number' : 'text' ?>" name="<?= e($f) ?>" class="form-input" value="<?= e($editRow[$f] ?? ($f === 'sort' ? '0' : '')) ?>">
@@ -149,7 +170,13 @@ require __DIR__ . '/inc/admin_header.php';
         <tr>
           <td><?= e($r['id']) ?></td>
           <?php foreach ($cfg['fields'] as $f => $label): ?>
-            <td style="max-width:220px;word-break:break-all"><?= e(mb_strimwidth((string)$r[$f], 0, 50, '…')) ?></td>
+            <td style="max-width:220px;word-break:break-all">
+              <?php if (in_array($f, $cfg['bool'] ?? [])): ?>
+                <span style="color:<?= !empty($r[$f]) ? '#6abf4b' : '#555' ?>"><?= !empty($r[$f]) ? '是' : '-' ?></span>
+              <?php else: ?>
+                <?= e(mb_strimwidth((string)$r[$f], 0, 50, '…')) ?>
+              <?php endif; ?>
+            </td>
           <?php endforeach; ?>
           <td>
             <a href="content.php?section=<?= e($table) ?>&edit=<?= e($r['id']) ?>" class="btn btn-outline btn-sm">编辑</a>
