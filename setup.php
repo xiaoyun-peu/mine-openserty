@@ -122,7 +122,7 @@ function seed_defaults(PDO $pdo): string {
 
     // 默认设置
     $defaults = [
-        'server_name'     => 'XY Server',
+        'server_name'     => 'Mineopenserty',
         'server_domain'   => 'play.xyserver.cn',
         'site_desc'       => '一个专注于原版生存与社区建设的 Minecraft 服务器。纯净、稳定、长久运行。',
         'footer_text'     => '一个致力于提供优质 Minecraft 多人游戏体验的服务器。纯净生存、社区共建、长久运营。',
@@ -146,7 +146,7 @@ function seed_defaults(PDO $pdo): string {
         'smtp_pass'       => '',
         'smtp_secure'     => 'ssl',
         'smtp_from'       => '',
-        'smtp_from_name'  => 'XY Server',
+        'smtp_from_name'  => 'Mineopenserty',
     ];
     $ins = $pdo->prepare('INSERT IGNORE INTO `settings` (`k`, `v`) VALUES (?, ?)');
     foreach ($defaults as $k => $v) {

@@ -1,5 +1,5 @@
 /**
- * XY Server Website - Main JavaScript
+ * Mineopenserty Website - Main JavaScript
  * 实用功能，无花哨特效
  */
 

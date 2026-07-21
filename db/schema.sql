@@ -1,4 +1,4 @@
--- XY Server 数据库结构
+-- Mineopenserty 数据库结构
 -- 字符集统一 utf8mb4
 
 CREATE TABLE IF NOT EXISTS `settings` (

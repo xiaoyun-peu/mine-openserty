@@ -1,11 +1,11 @@
 <?php
 /**
- * XY Server - 全站配置
+ * Mineopenserty - 全站配置
  * 只改这一处，所有页面同步生效
  */
 
 // 服务器信息
-define('SERVER_NAME',    'XY Server');
+define('SERVER_NAME',    'Mineopenserty');
 define('SERVER_IP',      'play.xyserver.cn');
 define('SERVER_PORT',    25565);
 define('SERVER_VERSION', '1.20.4');

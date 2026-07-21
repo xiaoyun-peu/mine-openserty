@@ -14,9 +14,32 @@ if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0755, true); }
 
 function is_blocked_resource_upload(string $filename): bool {
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    // 白名单：仅允许 MC 相关及常见文档格式
-    $allowed = ['jar','zip','rar','7z','gz','tar','mcpack','mcaddon','mcworld','pdf','png','jpg','jpeg','gif','svg','txt','md','cfg','json','yml','yaml','toml'];
-    return !in_array($ext, $allowed, true);
+    // 黑名单：禁止所有代码/可执行/脚本类型
+    $blocked = [
+        // PHP
+        'php','php3','php4','php5','php7','php8','phtml','pht','phar','phps','inc',
+        // Python
+        'py','pyc','pyo','pyd','pyw',
+        // JS / Node
+        'js','jsx','mjs','cjs','ts','tsx','node',
+        // Ruby
+        'rb','rbw','rake','gemspec',
+        // Shell
+        'sh','bash','zsh','fish','bat','cmd','ps1','psm1','psd1',
+        // Perl
+        'pl','pm','cgi',
+        // ASP / .NET
+        'asp','aspx','ascx','asmx','ashx','cs','cshtml','vb','vbhtml',
+        // JSP / Java 编译物（.jar 是 MC 核心格式，不拦住）
+        'jsp','jspx','class','war','ear',
+        // 配置文件（可能含敏感信息）
+        'env','ini','conf','config',
+        // 可执行文件
+        'dll','so','dylib','msi','scr','com','app',
+        // 其他标记/危险类型
+        'htaccess','htpasswd','shtml','shtm','stm','swf',
+    ];
+    return in_array($ext, $blocked, true);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -170,7 +193,7 @@ require __DIR__ . '/inc/admin_header.php';
     </div>
     <div class="form-group">
       <label class="form-label">客户端名称</label>
-      <input type="text" name="client_name" class="form-input" value="<?= e($client['client_name']) ?>" placeholder="XY Server 整合包">
+      <input type="text" name="client_name" class="form-input" value="<?= e($client['client_name']) ?>" placeholder="Mineopenserty 整合包">
     </div>
     <div class="form-group">
       <label class="form-label">客户端版本</label>

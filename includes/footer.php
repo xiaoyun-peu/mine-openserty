@@ -55,6 +55,7 @@ $_f_mcbbsUrl   = function_exists('setting') ? setting('mcbbs_url', '#') : '#';
       </div>
       <div class="footer-bottom">
         <p>© <?= e(SITE_YEAR) ?> <?= e($_f_serverName) ?>. All rights reserved. | Minecraft 是 Mojang Studios 的商标。</p>
+        <p class="footer-credit"><a href="https://github.com/xiaoyun-peu/mine-openserty" target="_blank" rel="noopener">Powered by Mineopenserty</a></p>
       </div>
     </div>
   </footer>

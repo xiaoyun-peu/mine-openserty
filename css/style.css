@@ -1,5 +1,5 @@
 /* ============================================
-   XY Server - Minecraft Server Website
+   Mineopenserty - Minecraft Server Website
    扁平实用风格 | 无渐变 | 无毛玻璃 | 无过度圆角
    ============================================ */
 
@@ -504,6 +504,22 @@ svg {
   text-align: center;
   color: #444;
   font-size: 13px;
+}
+
+.footer-credit {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #555;
+}
+
+.footer-credit a {
+  color: #6abf4b;
+  opacity: .7;
+  transition: opacity .15s;
+}
+
+.footer-credit a:hover {
+  opacity: 1;
 }
 
 /* ============================================

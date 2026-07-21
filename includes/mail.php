@@ -18,7 +18,7 @@ function smtp_send(string $to, string $subject, string $body): bool {
     $pass   = setting('smtp_pass');
     $secure = setting('smtp_secure', 'ssl'); // ssl | tls | none
     $from   = setting('smtp_from') ?: $user;
-    $fromName = setting('smtp_from_name', 'XY Server');
+    $fromName = setting('smtp_from_name', 'Mineopenserty');
 
     if ($host === '' || $user === '') {
         throw new SmtpException('SMTP 未配置');

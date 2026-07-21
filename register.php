@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $tpl = setting('smtp_tpl_code', "你好：\n\n你的验证码是：{code}，10 分钟内有效。\n\n—— {server_name}");
                     $body = mail_render($tpl, [
                         '{code}' => $code,
-                        '{server_name}' => setting('server_name', 'XY Server'),
+                        '{server_name}' => setting('server_name', 'Mineopenserty'),
                     ]);
-                    smtp_send($email, '【' . setting('server_name', 'XY Server') . '】注册验证码', $body);
+                    smtp_send($email, '【' . setting('server_name', 'Mineopenserty') . '】注册验证码', $body);
                     $step = 'sent';
                 } catch (Throwable $e) {
                     $errors[] = '验证码发送失败，请稍后再试';

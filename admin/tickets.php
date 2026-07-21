@@ -46,11 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 有邮箱则发邮件
                 if (!empty($ticket['email'])) {
                     try {
-                        $subject = '【' . setting('server_name', 'XY Server') . '】工单回复：' . $ticket['title'];
+                        $subject = '【' . setting('server_name', 'Mineopenserty') . '】工单回复：' . $ticket['title'];
                         $body = "你好 {$ticket['game_id']}：\n\n"
                               . "你的工单《{$ticket['title']}》已有回复：\n\n"
                               . $content . "\n\n"
-                              . "—— " . setting('server_name', 'XY Server') . " 管理团队";
+                              . "—— " . setting('server_name', 'Mineopenserty') . " 管理团队";
                         smtp_send($ticket['email'], $subject, $body);
                         $msg = '已回复并发送邮件通知';
                     } catch (Throwable $e) {

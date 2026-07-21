@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msgType = 'err';
         } else {
             try {
-                smtp_send($to, 'SMTP 测试邮件', "这是一封来自 " . setting('server_name', 'XY Server') . " 的 SMTP 测试邮件。\n\n如果你收到这封邮件，说明 SMTP 配置正确。");
+                smtp_send($to, 'SMTP 测试邮件', "这是一封来自 " . setting('server_name', 'Mineopenserty') . " 的 SMTP 测试邮件。\n\n如果你收到这封邮件，说明 SMTP 配置正确。");
                 $msg = '测试邮件已发送，请查收';
             } catch (Throwable $e) {
                 $msg = '发送失败：' . $e->getMessage();
