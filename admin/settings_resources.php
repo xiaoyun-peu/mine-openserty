@@ -168,7 +168,7 @@ require __DIR__ . '/inc/admin_header.php';
 ?>
 
 <h1 class="admin-page-title">资源下载设置</h1>
-<p class="admin-page-desc">官方客户端与其他资源（可上传文件并提交 VirusTotal 校验）</p>
+<p class="admin-page-desc">官方客户端与其他资源</p>
 
 <?php if ($msg !== ''): ?>
   <div class="notice-bar" style="border-color:<?= $msgType === 'ok' ? '#6abf4b' : '#e74c3c' ?>">

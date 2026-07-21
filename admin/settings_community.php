@@ -81,7 +81,7 @@ require __DIR__ . '/inc/admin_header.php';
 ?>
 
 <h1 class="admin-page-title">社区设置</h1>
-<p class="admin-page-desc">管理社区群组、社交媒体、语音频道，每项最多 5 个</p>
+<p class="admin-page-desc">语音频道 / 社交媒体 / 社区群聊</p>
 
 <?php if ($msg): ?>
 <div class="notice-bar" style="border-color:<?= $msgType==='ok'?'#6abf4b':'#e74c3c' ?>">

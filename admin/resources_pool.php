@@ -172,7 +172,7 @@ require __DIR__ . '/inc/admin_header.php';
 ?>
 
 <h1 class="admin-page-title">资源池管理</h1>
-<p class="admin-page-desc"><?= $tab==='image'?'管理图像资源':'上传和管理文件，支持 4 层嵌套文件夹' ?></p>
+<p class="admin-page-desc"><?= $tab==='image'?'图像':'文件' ?></p>
 
 <?php if ($msg !== ''): ?>
 <div class="notice-bar" style="border-color:<?= $msgType==='ok'?'#6abf4b':'#e74c3c' ?>;margin-bottom:12px">
