@@ -3,7 +3,7 @@
 开箱即用的 Minecraft 服务器官网系统。PHP + MySQL 原生实现。
 
 ## 特点
-利用**Mine**craft**Open****Ser**\verCommuni**ty**
+利用<strong>Mine</strong>craft<strong>Open</strong><strong>Ser</strong>verCommuni<strong>ty</strong>
 
 ## 功能
 
