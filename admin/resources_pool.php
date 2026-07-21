@@ -220,12 +220,12 @@ require __DIR__ . '/inc/admin_header.php';
       <?php if ($tab !== 'image'): ?>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('addFolderForm').style.display='flex'">+ 新建文件夹</button>
       <?php endif; ?>
-      <form method="post" enctype="multipart/form-data" style="display:flex;gap:4px;align-items:center">
+      <form method="post" enctype="multipart/form-data" id="uploadForm" style="display:flex;gap:4px;align-items:center">
         <?php admin_csrf_input(); ?>
         <input type="hidden" name="action" value="upload">
         <input type="hidden" name="folder" value="<?= e($folderPath) ?>">
-        <input type="file" name="file" required style="color:#ccc;font-size:12px;max-width:180px">
-        <button type="submit" class="btn btn-primary btn-sm">上传</button>
+        <input type="file" name="file" id="fileInput" required style="display:none" onchange="this.form.submit()">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">选择文件</button>
       </form>
     </div>
   </div>
