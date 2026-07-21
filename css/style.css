@@ -1400,3 +1400,11 @@ svg {
 .nav-user-item a {
   /* 不再覆盖 display:block，保持跟其他 nav 按钮一致 */
 }
+
+/* 申请卡片展开 */
+.app-card.expanded .app-card-body {
+  display: block !important;
+}
+.app-card.expanded .app-card-header svg {
+  transform: rotate(180deg);
+}

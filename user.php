@@ -10,10 +10,22 @@ $me = current_user();
 // 我的工单和申请
 $tickets = [];
 $apps = [];
+$ticketReplies = []; // ticket_id => [replies]
 try {
     $stmt = db()->prepare('SELECT * FROM `tickets` WHERE `game_id` = ? OR `email` = ? ORDER BY `created_at` DESC LIMIT 20');
     $stmt->execute([$me['game_id'], $me['email']]);
     $tickets = $stmt->fetchAll();
+
+    // 拉取这些工单的回复
+    if (!empty($tickets)) {
+        $ids = array_column($tickets, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = db()->prepare("SELECT * FROM `ticket_replies` WHERE `ticket_id` IN ($placeholders) ORDER BY `created_at` ASC");
+        $stmt->execute($ids);
+        foreach ($stmt->fetchAll() as $r) {
+            $ticketReplies[$r['ticket_id']][] = $r;
+        }
+    }
 
     $stmt = db()->prepare('SELECT * FROM `applications` WHERE `game_id` = ? ORDER BY `created_at` DESC LIMIT 20');
     $stmt->execute([$me['game_id']]);
@@ -75,12 +87,27 @@ require __DIR__ . '/includes/header.php';
           <table class="info-table">
             <tr><th>标题</th><th style="width:100px">类型</th><th style="width:100px">状态</th><th style="width:160px">时间</th></tr>
             <?php foreach ($tickets as $t): ?>
-              <tr>
+              <?php $replies = $ticketReplies[$t['id']] ?? []; ?>
+              <tr id="ticket-row-<?= $t['id'] ?>" style="cursor:pointer" onclick="var r=document.getElementById('ticket-replies-<?= $t['id'] ?>');if(r)r.style.display=r.style.display==='none'?'':'none'">
                 <td><?= e($t['title']) ?></td>
                 <td><?= e($typeNames[$t['type']] ?? $t['type']) ?></td>
-                <td><span class="tag tag-<?= $t['status']==='open'?'orange':($t['status']==='replied'?'green':'blue') ?>"><?= e($statusNames[$t['status']] ?? $t['status']) ?></span></td>
-                <td><?= e(date('Y-m-d H:i', strtotime($t['created_at']))) ?></td>
+                <td><span class="tag tag-<?= $t['status']==='open'?'orange':($t['status']==='replied'?'green':'blue') ?>"><?= e($statusNames[$t['status']] ?? $t['status']) ?><?= !empty($replies) ? ' ('.count($replies).')' : '' ?></span></td>
+                <td><?= e(date('m-d H:i', strtotime($t['created_at']))) ?></td>
               </tr>
+              <?php if (!empty($replies)): ?>
+              <tr id="ticket-replies-<?= $t['id'] ?>" style="display:none">
+                <td colspan="4" style="background:#111;padding:12px 16px">
+                  <p style="color:#aaa;font-size:12px;margin-bottom:8px">— 问题描述 —</p>
+                  <p style="color:#ccc;font-size:13px;line-height:1.6;margin-bottom:14px"><?= nl2br(e($t['detail'])) ?></p>
+                  <?php foreach ($replies as $reply): ?>
+                  <div style="border-left:2px solid #6abf4b;padding:4px 0 4px 12px;margin-bottom:10px">
+                    <p style="color:#6abf4b;font-size:12px;margin-bottom:4px">管理员回复 · <?= e($reply['created_at']) ?></p>
+                    <p style="color:#ccc;font-size:13px;line-height:1.6"><?= nl2br(e($reply['content'])) ?></p>
+                  </div>
+                  <?php endforeach; ?>
+                </td>
+              </tr>
+              <?php endif; ?>
             <?php endforeach; ?>
           </table>
         <?php endif; ?>
