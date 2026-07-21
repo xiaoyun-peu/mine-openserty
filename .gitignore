@@ -25,3 +25,6 @@ dist/
 .DS_Store
 Thumbs.db
 /.workbuddy/
+assets/**/temp/
+/uploads/
+/assets/

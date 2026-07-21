@@ -373,11 +373,12 @@ function copyLink(id) {
   navigator.clipboard.writeText(url).then(function(){alert('链接已复制：'+url)}).catch(function(){prompt('复制此链接：',url)});
 }
 
-// 分块上传（1MB/chunk，不卡不死）
+// 分块上传（1MB/chunk，自动重试，单块超时 60 秒）
 function startUpload() {
   var input = document.getElementById('fileInput');
   var file = input.files[0];
   if (!file) return;
+  input.value = ''; // 允许再次选择同一文件
 
   var wrap = document.getElementById('progressWrap');
   var bar = document.getElementById('progressBar');
@@ -387,8 +388,14 @@ function startUpload() {
 
   var chunkSize = 1 * 1024 * 1024;
   var totalChunks = Math.ceil(file.size / chunkSize);
-  var fileId = Date.now() + '-' + Math.random().toString(36).substr(2);
-  var sent = 0;
+  var fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  var completed = 0;
+  var inFlight = 0;
+  var nextIdx = 0;
+  var failed = false;
+  var concurrency = 2;           // 降低并发，减少连接压力
+  var maxRetries = 3;            // 每块失败最多重试次数
+  var chunkTimeout = 60000;      // 单块超时 60 秒
 
   wrap.style.display = 'flex';
   bar.style.width = '0%';
@@ -396,67 +403,37 @@ function startUpload() {
   name.textContent = file.name;
   name.style.color = '#ccc';
 
-  function sendChunk(idx) {
-    if (idx >= totalChunks) return;
-    var start = idx * chunkSize;
-    var end = Math.min(start + chunkSize, file.size);
-    var chunk = file.slice(start, end);
-    var fd = new FormData();
-    fd.append('file', chunk);
-    fd.append('fileName', file.name);
-    fd.append('origName', file.name);
-    fd.append('chunkIndex', idx);
-    fd.append('totalChunks', totalChunks);
-    fd.append('fileId', fileId);
-    fd.append('tab', '<?= $tab ?>');
-    fd.append('folder', form.querySelector('[name=folder]').value || '');
-    fd.append('_csrf', form.querySelector('[name=_csrf]').value);
-
-    fetch('upload_chunk.php', { method:'POST', body:fd })
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        if (data.error) { name.textContent = data.error; name.style.color = '#e74c3c'; return; }
-        sent++;
-        var p = Math.round(sent / totalChunks * 100);
-        bar.style.width = p + '%';
-        pct.textContent = p + '%';
-        if (data.done) {
-          // 上传完成
-          bar.style.width = '100%';
-          pct.textContent = '100%';
-          setTimeout(function(){
-            var u = new URL(window.location.href);
-            u.searchParams.set('uploaded', data.id);
-            window.location.href = u.toString();
-          }, 300);
-        }
-      })
-      .catch(function(){
-        // 失败重试一次
-        setTimeout(function(){ sendChunk(idx); }, 500);
-      });
+  function updateProgress() {
+    var p = totalChunks ? Math.round(completed / totalChunks * 100) : 100;
+    bar.style.width = p + '%';
+    pct.textContent = p + '%';
   }
 
-  // 串行发送分片（避免服务器压力）
-  var i = 0;
-  function next() {
-    if (i < totalChunks) { sendChunk(i); i++; }
-    else return;
+  function finish(id) {
+    updateProgress();
+    setTimeout(function(){
+      var u = new URL(window.location.href);
+      u.searchParams.set('uploaded', id);
+      window.location.href = u.toString();
+    }, 300);
   }
-  // 流水线：发送下一个时上一个还在传
-  function pipeline() {
-    for (var j = 0; j < 3 && i < totalChunks; j++) { sendChunk(i); i++; }
+
+  function fatal(msg) {
+    failed = true;
+    name.textContent = msg;
+    name.style.color = '#e74c3c';
   }
-  // 用并发管道代替串行，更快
-  var inFlight = 0;
-  function sendWithPipe(idx) {
-    if (idx >= totalChunks) return;
+
+  function sendChunk(idx, attempt) {
+    attempt = attempt || 1;
+    if (failed || idx >= totalChunks) return;
     inFlight++;
+
     var start = idx * chunkSize;
     var end = Math.min(start + chunkSize, file.size);
     var chunk = file.slice(start, end);
     var fd = new FormData();
-    fd.append('file', chunk);
+    fd.append('file', chunk, file.name);
     fd.append('fileName', file.name);
     fd.append('origName', file.name);
     fd.append('chunkIndex', idx);
@@ -466,34 +443,52 @@ function startUpload() {
     fd.append('folder', form.querySelector('[name=folder]').value || '');
     fd.append('_csrf', form.querySelector('[name=_csrf]').value);
 
-    fetch('upload_chunk.php', { method:'POST', body:fd })
-      .then(function(r){ return r.json(); })
+    var controller = new AbortController();
+    var timer = setTimeout(function(){ controller.abort(); }, chunkTimeout);
+
+    fetch('upload_chunk.php', { method:'POST', body:fd, credentials:'same-origin', signal:controller.signal })
+      .then(function(r){
+        clearTimeout(timer);
+        if (!r.ok) {
+          if (r.status === 403) throw new Error('会话已过期，请刷新页面后重试');
+          throw new Error('HTTP ' + r.status);
+        }
+        return r.json();
+      })
       .then(function(data){
-        if (data.error) { name.textContent = data.error; name.style.color = '#e74c3c'; return; }
-        sent++;
-        var p = Math.round(sent / totalChunks * 100);
-        bar.style.width = p + '%';
-        pct.textContent = p + '%';
-        if (data.done) {
-          bar.style.width = '100%';
-          pct.textContent = '100%';
-          setTimeout(function(){
-            var u = new URL(window.location.href);
-            u.searchParams.set('uploaded', data.id);
-            window.location.href = u.toString();
-          }, 300);
+        if (data.error) throw new Error(data.error);
+        completed++;
+        updateProgress();
+        if (data.done) { finish(data.id); }
+      })
+      .catch(function(err){
+        clearTimeout(timer);
+        if (failed) return;
+
+        // 可重试的网络/超时错误
+        var isAbort = err.name === 'AbortError';
+        var errMsg = isAbort ? '块 ' + idx + ' 上传超时' : (err.message || '网络错误');
+
+        if (attempt < maxRetries && (isAbort || err.message.indexOf('HTTP') !== -1 || err.message.indexOf('网络') !== -1 || err.message.indexOf('fetch') !== -1)) {
+          name.textContent = file.name + '（块 ' + (idx+1) + '/' + totalChunks + ' 重试 ' + attempt + '/' + maxRetries + '）';
+          setTimeout(function(){ sendChunk(idx, attempt + 1); }, attempt * 1500);
+        } else {
+          fatal('上传失败：' + errMsg);
         }
       })
-      .catch(function(){ setTimeout(function(){ sendWithPipe(idx); }, 500); })
       .finally(function(){
         inFlight--;
-        while (inFlight < 3 && i < totalChunks) { sendWithPipe(i); i++; }
+        pump();
       });
-
-    if (inFlight < 3 && i < totalChunks) { sendWithPipe(i); i++; }
   }
-  // 启动流水线
-  for (var k = 0; k < 3 && i < totalChunks; k++) { sendWithPipe(i); i++; }
+
+  function pump() {
+    while (!failed && inFlight < concurrency && nextIdx < totalChunks) {
+      sendChunk(nextIdx++);
+    }
+  }
+
+  pump();
 }
 </script>
 

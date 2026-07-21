@@ -5,7 +5,7 @@
  */
 require __DIR__ . '/inc/auth.php';
 require_login();
-require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/db.php';
 
 header('Content-Type: application/json');
 
