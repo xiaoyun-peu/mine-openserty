@@ -13,6 +13,9 @@ if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
 $msg = '';
 $msgType = 'ok';
+if (!empty($_GET['uploaded'])) {
+    $msg = '上传成功，编号：#' . ((int)$_GET['uploaded']);
+}
 
 // === POST 处理 ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -48,6 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare('INSERT INTO resource_pool (id, filename, original_name, file_path, file_size, folder) VALUES (?,?,?,?,?,?)');
                     $stmt->execute([$newId, $safeName, $file['name'], $relPath, filesize($dest), $folder ?: null]);
                     $msg = "上传成功，编号：#{$newId}";
+                    // AJAX 上传：返回标记后 JS 刷新
+                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                        echo $newId; exit;
+                    }
                 } else { $msg = '文件保存失败'; $msgType = 'err'; }
             }
         }
@@ -224,10 +231,19 @@ require __DIR__ . '/inc/admin_header.php';
         <?php admin_csrf_input(); ?>
         <input type="hidden" name="action" value="upload">
         <input type="hidden" name="folder" value="<?= e($folderPath) ?>">
-        <input type="file" name="file" id="fileInput" required style="display:none" onchange="this.form.submit()">
+        <input type="file" name="file" id="fileInput" required style="display:none" onchange="startUpload()">
         <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileInput').click()">选择文件</button>
       </form>
     </div>
+  </div>
+
+  <!-- 上传进度条 -->
+  <div id="progressWrap" style="display:none;margin-bottom:10px;align-items:center;gap:10px">
+    <span id="progressName" style="color:#ccc;font-size:13px;flex-shrink:0"></span>
+    <div style="flex:1;background:#222;height:6px;border-radius:3px;overflow:hidden">
+      <div id="progressBar" style="height:100%;background:#6abf4b;width:0%;transition:width .2s"></div>
+    </div>
+    <span id="progressPct" style="color:#6abf4b;font-size:12px;min-width:36px">0%</span>
   </div>
 
   <!-- 新建文件夹行 -->
@@ -354,6 +370,60 @@ function bulkAction(act) {
 function copyLink(id) {
   var url = window.location.origin + '/download.php?id=' + id;
   navigator.clipboard.writeText(url).then(function(){alert('链接已复制：'+url)}).catch(function(){prompt('复制此链接：',url)});
+}
+
+// 带进度的 AJAX 上传
+function startUpload() {
+  var input = document.getElementById('fileInput');
+  var file = input.files[0];
+  if (!file) return;
+
+  var wrap = document.getElementById('progressWrap');
+  var bar = document.getElementById('progressBar');
+  var pct = document.getElementById('progressPct');
+  var name = document.getElementById('progressName');
+  var form = document.getElementById('uploadForm');
+
+  wrap.style.display = 'flex';
+  bar.style.width = '0%';
+  pct.textContent = '0%';
+  name.textContent = file.name;
+
+  var fd = new FormData(form);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', form.action || window.location.href, true);
+
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      var p = Math.round(e.loaded / e.total * 100);
+      bar.style.width = p + '%';
+      pct.textContent = p + '%';
+    }
+  });
+
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 400) {
+      bar.style.width = '100%';
+      pct.textContent = '100%';
+      var newId = xhr.responseText;
+      setTimeout(function(){
+        var u = new URL(window.location.href);
+        u.searchParams.set('uploaded', newId);
+        window.location.href = u.toString();
+      }, 300);
+    } else {
+      name.textContent = '上传失败';
+      name.style.color = '#e74c3c';
+    }
+  };
+
+  xhr.onerror = function() {
+    name.textContent = '网络错误';
+    name.style.color = '#e74c3c';
+  };
+
+  xhr.send(fd);
 }
 </script>
 
