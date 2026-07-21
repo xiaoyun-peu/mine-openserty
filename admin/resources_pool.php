@@ -59,8 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'delete') {
-        $ids = $_POST['ids'] ?? [];
-        if (!is_array($ids)) $ids = [$_POST['id'] ?? -1];
+        $raw = $_POST['ids'] ?? ($_POST['id'] ?? '-1');
+        $ids = is_array($raw) ? $raw : array_map('intval', explode(',', (string)$raw));
         $del = 0;
         foreach ($ids as $id) {
             $stmt = $pdo->prepare('SELECT file_path FROM resource_pool WHERE id = ?');
@@ -75,7 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $msg = "已删除 {$del} 个资源";
     } elseif ($action === 'move') {
-        $ids = $_POST['ids'] ?? [];
+        $raw = $_POST['ids'] ?? '-1';
+        $ids = is_array($raw) ? $raw : array_map('intval', explode(',', (string)$raw));
         $target = trim($_POST['target'] ?? '');
         $target = preg_replace('#/+#', '/', trim($target, '/'));
         if (!is_array($ids)) $ids = [(int)$ids];
