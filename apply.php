@@ -8,9 +8,11 @@ $PAGE_TITLE = '入服申请';
 $needLogin = !user_logged_in();
 $me = current_user();
 
-// 该用户已提交次数 + 是否已有通过的申请
+// 该用户申请状态判定
 $applyCount = 0;
 $hasApproved = false;
+$hasPending = false;
+$latestStatus = null;
 if ($me) {
     try {
         $stmt = db()->prepare('SELECT COUNT(*) FROM `applications` WHERE `game_id` = ?');
@@ -20,9 +22,18 @@ if ($me) {
         $stmt = db()->prepare('SELECT COUNT(*) FROM `applications` WHERE `game_id` = ? AND `status` = ?');
         $stmt->execute([$me['game_id'], 'approved']);
         $hasApproved = ((int)$stmt->fetchColumn()) > 0;
+
+        $stmt = db()->prepare('SELECT COUNT(*) FROM `applications` WHERE `game_id` = ? AND `status` = ?');
+        $stmt->execute([$me['game_id'], 'pending']);
+        $hasPending = ((int)$stmt->fetchColumn()) > 0;
+
+        $stmt = db()->prepare('SELECT `status` FROM `applications` WHERE `game_id` = ? ORDER BY `id` DESC LIMIT 1');
+        $stmt->execute([$me['game_id']]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) $latestStatus = $row['status'];
     } catch (Throwable $e) {}
 }
-$canApply = !$hasApproved && $applyCount < 6;
+$canApply = !$hasApproved && !$hasPending && $applyCount < 6;
 
 $flash = $_GET['s'] ?? '';
 $errors = [];
@@ -73,6 +84,8 @@ require __DIR__ . '/includes/header.php';
         <p style="color:#888;font-size:13px;margin-bottom:12px">
           <?php if ($hasApproved): ?>
             你的入服申请<strong>已通过</strong>，无需再次提交。
+          <?php elseif ($hasPending): ?>
+            你有一条申请正在审核中，请耐心等待结果，不要重复提交。
           <?php else: ?>
             每个账号最多提交 6 次入服申请，你已提交 <strong><?= $applyCount ?></strong> 次，剩余 <strong><?= max(0, 6 - $applyCount) ?></strong> 次
           <?php endif; ?>
@@ -82,6 +95,11 @@ require __DIR__ . '/includes/header.php';
           <div class="notice-bar" style="border-color:#6abf4b">
             <span class="icon" style="color:#6abf4b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span>
             <p>恭喜！你的入服申请已通过审核。</p>
+          </div>
+        <?php elseif ($hasPending): ?>
+          <div class="notice-bar" style="border-color:#f1c40f">
+            <span class="icon" style="color:#f1c40f"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>
+            <p>申请正在审核中，结果出来前请勿重复提交。</p>
           </div>
         <?php elseif ($applyCount >= 6): ?>
           <div class="notice-bar" style="border-color:#e74c3c">
