@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$me['id']]);
         $row = $stmt->fetch();
 
-        if (!$row || !password_verify($old, $row['password_hash'])) {
+        if (!$row || md5($old) !== $row['password_hash']) {
             $msg = '原密码不正确';
             $msgType = 'err';
         } elseif (strlen($new) < 6) {
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = '两次输入的新密码不一致';
             $msgType = 'err';
         } else {
-            $hash = password_hash($new, PASSWORD_DEFAULT);
+            $hash = md5($new);
             $stmt = db()->prepare('UPDATE `admins` SET `password_hash` = ? WHERE `id` = ?');
             $stmt->execute([$hash, $me['id']]);
             $msg = '密码已更新';

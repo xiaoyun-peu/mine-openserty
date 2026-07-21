@@ -116,7 +116,7 @@ function migrate_schema(PDO $pdo): void {
 /** 写入初始设置与默认内容 */
 function seed_defaults(PDO $pdo): string {
     $adminPassword = bin2hex(random_bytes(8));
-    $hash = password_hash($adminPassword, PASSWORD_DEFAULT);
+    $hash = md5($adminPassword);
     $stmt = $pdo->prepare('INSERT IGNORE INTO `admins` (`username`, `password_hash`, `email`) VALUES (?, ?, ?)');
     $stmt->execute(['admin', $hash, '']);
 
