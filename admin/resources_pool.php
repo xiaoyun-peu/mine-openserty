@@ -149,7 +149,9 @@ if ($tab === 'image') {
 if ($folderPath !== '') { $where .= ' AND folder = ?'; $params[] = $folderPath; }
 $page = max(1, (int)($_GET['p'] ?? 1));
 $perPage = $tab === 'image' ? 20 : 30;
-$total = (int)db()->query("SELECT COUNT(*) FROM resource_pool WHERE $where")->fetchColumn();
+$cStmt = db()->prepare("SELECT COUNT(*) FROM resource_pool WHERE $where");
+$cStmt->execute($params);
+$total = (int)$cStmt->fetchColumn();
 $stmt = db()->prepare("SELECT * FROM resource_pool WHERE $where ORDER BY id ASC LIMIT $perPage OFFSET " . (($page-1)*$perPage));
 $stmt->execute($params);
 $items = $stmt->fetchAll();
